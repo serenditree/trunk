@@ -1,0 +1,22 @@
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: root-map
+  labels:
+    {{- include "st-default-labels-component" . }}
+    serenditree.io/policy: fence-root-map
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: root-map
+  minReplicas: {{ .Values.rootMap.minReplicas }}
+  maxReplicas: {{ .Values.rootMap.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75

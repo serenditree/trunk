@@ -1,0 +1,33 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: serenditree-argocd
+  labels:
+    app.kubernetes.io/component: tekton
+spec:
+  description: 'Task for syncing and deploying ArgoCD apps.'
+  params:
+    - name: app
+      description: 'ArgoCD application name.'
+      type: string
+    - name: kind
+      description: 'Kind of the resource to deploy.'
+      type: string
+      default: 'Deployment'
+    - name: action
+      description: 'Action to run {sync|deploy}.'
+      type: string
+    - name: timeout
+      description: 'Timeout for healthcheck in seconds.'
+      type: string
+      default: '420'
+  stepTemplate:
+    envFrom:
+      - secretRef:
+          name: argocd-token
+  steps:
+    - name: $(params.action)
+      image: docker.io/argoproj/argocd:latest
+      script: |
+{{ .Files.Get "resources/argocd.sh" | indent 8 }}

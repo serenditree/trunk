@@ -1,0 +1,30 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.terraArgocd.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.terraArgocd.wave | quote }}
+    argocd.argoproj.io/sync-wave: {{ .Values.terraArgocd.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{ .Values.global.terraPath }}/{{ trimPrefix .Values.global.terraPrefix .Values.terraArgocd.name }}"
+    targetRevision: {{ .Values.terraArgocd.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+        - name: global.wait
+          value: {{ .Values.global.wait | quote }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.global.argocdNamespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

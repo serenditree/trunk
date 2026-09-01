@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.rootSeed.configEnv }}
+  labels:
+    {{- include "st-default-labels" . }}
+data:
+  s3.client.default.endpoint: {{ .Values.rootSeed.s3.endpoint | quote }}
+  s3.client.default.region: {{ .Values.rootSeed.s3.region | quote }}

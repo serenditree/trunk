@@ -1,0 +1,14 @@
+apiVersion: v2
+type: application
+name: terra-sql
+description: PostgreSQL resources.
+version: 0.0.1
+appVersion: 0.0.1
+dependencies:
+  - name: cloudnative-pg
+    repository: https://cloudnative-pg.github.io/charts
+    version: 0.29.0
+  - name: commons
+    repository: oci://quay.io/serenditree/charts
+    version: 0.0.1
+    condition: global.wait

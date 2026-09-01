@@ -1,0 +1,119 @@
+########################################################################################################################
+# GLOBAL
+########################################################################################################################
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: branch
+  labels:
+    {{- include "st-default-labels" . }}
+spec:
+  parentRefs:
+    - name: serenditree
+      namespace: terra-gateway
+  hostnames:
+    - {{ .Values.global.host }}
+  rules:
+    {{- range .Values.branch.branches }}
+    - backendRefs:
+        - group: ""
+          kind: Service
+          {{- if eq "garden" . }}
+          name: branch-seed
+          {{- else }}
+          name: branch-{{ . }}
+          {{- end }}
+          port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/{{ . }}
+    {{- if and $.Values.branch.rateLimit (eq $.Values.global.gateway "traefik") }}
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: branch-global-ratelimit
+    {{- end }}
+    {{- end }}
+{{- if and .Values.branch.rateLimit (eq .Values.global.gateway "envoy") }}
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: branch
+  labels:
+    {{- include "st-default-labels" . }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: branch
+  rateLimit:
+    type: Global
+    global:
+      rules:
+        - limit:
+            requests: 10
+            unit: Second
+{{- end }}
+########################################################################################################################
+# SIGN UP
+########################################################################################################################
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: sign-up
+  labels:
+    {{- include "st-default-labels" . }}
+spec:
+  parentRefs:
+    - name: serenditree
+      namespace: terra-gateway
+  hostnames:
+    - {{ .Values.global.host }}
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: branch-user
+          port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/user/sign-up
+{{- if .Values.branch.rateLimit }}
+{{- if eq .Values.global.gateway "traefik" }}
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: branch-sign-up-ratelimit
+{{ else if eq .Values.global.gateway "envoy" }}
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: sign-up
+  labels:
+    {{- include "st-default-labels" . }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: sign-up
+  rateLimit:
+    type: Global
+    global:
+      rules:
+        - limit:
+            requests: 1
+            unit: Day
+{{- end }}
+{{- end }}

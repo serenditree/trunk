@@ -1,0 +1,171 @@
+global:
+  wait: ~
+  wave: ~
+victoria-metrics-k8s-stack:
+  fullnameOverride: terra-scope
+  victoria-metrics-operator:
+    admissionWebhooks:
+      certManager:
+        enabled: true
+########################################################################################################################
+# VictoriaMetrics
+########################################################################################################################
+  vmsingle:
+    spec:
+      retentionPeriod: 1w
+      resources:
+        requests:
+          cpu: 100m
+          memory: 500Mi
+        limits:
+          cpu: 500m
+          memory: 500Mi
+      storage:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+  prometheus-node-exporter:
+    resources:
+     requests:
+       cpu: 100m
+       memory: 50Mi
+     limits:
+       cpu: 200m
+       memory: 50Mi
+  kubeProxy:
+    enabled: false
+  kubeScheduler:
+    enabled: false
+  kubeControllerManager:
+    enabled: false
+  kubeEtcd:
+    enabled: false
+  defaultRules:
+    groups:
+      etcd:
+        enabled: false
+      kubernetes-system-scheduler:
+        enabled: false
+      kubernetes-system-controller-manager:
+        enabled: false
+      kube-scheduler.rules:
+        enabled: false
+      kube-prometheus-general.rules:
+        rules:
+          "count:up0":
+            enabled: false
+########################################################################################################################
+# VictoriaLogs
+########################################################################################################################
+  vlsingle:
+    enabled: true
+    spec:
+      retentionPeriod: 1w
+      resources:
+        requests:
+          cpu: 100m
+          memory: 150Mi
+        limits:
+          cpu: 200m
+          memory: 150Mi
+      storage:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+########################################################################################################################
+# VictoriaTraces
+########################################################################################################################
+  vtsingle:
+    enabled: true
+    spec:
+      retentionPeriod: 1w
+      resources:
+        requests:
+          cpu: 100m
+          memory: 150Mi
+        limits:
+          cpu: 200m
+          memory: 150Mi
+      storage:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+########################################################################################################################
+# Alertmanager
+########################################################################################################################
+  alertmanager:
+    spec:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 300Mi
+        limits:
+          cpu: 200m
+          memory: 300Mi
+      storage:
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 10Gi
+      secrets:
+        - slack-api-url
+    config:
+      global:
+        resolve_timeout: 5m
+        slack_api_url_file: /etc/vm/secrets/slack-api-url/slack-api-url
+      route:
+        receiver: slack
+        group_by:
+          - alertname
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 3h
+        routes:
+          - receiver: "null"
+            matchers:
+              - 'alertname =~ "Watchdog|KubeClientCertificateExpiration|InfoInhibitor"'
+          - receiver: slack
+      receivers:
+        - name: slack
+          slack_configs:
+            - channel: "#alerts"
+              send_resolved: true
+              title: "{{ range $i, $a := .Alerts }}{{ $i }}. {{ $a.Annotations.summary }}\n{{ end }}"
+              text: "{{ range $i, $a := .Alerts }}*{{ $i }}. {{ $a.Annotations.summary }}*\n{{ $a.Annotations.description }}\n\n{{ end }}"
+        - name: "null"
+########################################################################################################################
+# Grafana
+########################################################################################################################
+  grafana:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 768Mi
+    admin:
+      existingSecret: grafana-credentials
+      userKey: username
+      passwordKey: password
+    replicas: 1
+    deploymentStrategy:
+      type: Recreate
+    annotations:
+      argocd.argoproj.io/sync-options: Replace=true
+    persistence:
+      enabled: true
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
+    plugins:
+      - victoriametrics-logs-datasource

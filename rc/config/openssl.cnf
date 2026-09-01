@@ -1,0 +1,19 @@
+default_bits       = 2048
+default_md         = sha256
+distinguished_name = req_distinguished_name
+x509_extensions    = v3_ca
+prompt             = no
+
+[req_distinguished_name]
+C  = AT
+ST = Vienna
+L  = Vienna
+O  = Serenditree
+OU = Serenditree
+CN = serenditree.io
+
+[v3_ca]
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always,issuer:always
+basicConstraints = critical, CA:true
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign

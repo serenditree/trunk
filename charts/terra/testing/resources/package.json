@@ -1,0 +1,9 @@
+{
+  "name": "serenditree",
+  "version": "0.0.0",
+  "license": "",
+  "private": true,
+  "devDependencies": {
+    "@types/k6": "^2.0.0"
+  }
+}

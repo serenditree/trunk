@@ -1,0 +1,32 @@
+openbao:
+  fullnameOverride: vault
+  global:
+    enabled: false
+  server:
+    enabled: true
+    readinessProbe:
+      enabled: false # not ready until vault is initialized
+    resources:
+      requests:
+        cpu: 250m
+        memory: 250Mi
+      limits:
+        cpu: 500m
+        memory: 500Mi
+    dataStorage:
+      enabled: true
+      size: 10Gi
+      accessMode: ReadWriteOnce
+    standalone:
+      enabled: true
+  ui:
+    enabled: true
+external-secrets:
+  fullnameOverride: secrets
+  installCRDs: true
+reloader:
+  fullnameOverride: reloader
+  reloader:
+    reloadStrategy: annotations
+    namespaceSelector: kubernetes.io/metadata.name=serenditree
+    watchGlobally: true

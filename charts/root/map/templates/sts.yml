@@ -1,0 +1,194 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: root-map
+  labels:
+    {{- include "st-default-labels-component" . }}
+spec:
+  serviceName: root-map
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      name: root-map
+  template:
+    metadata:
+      labels:
+        {{- include "st-default-labels-component" . | indent 4 }}
+        serenditree.io/policy: fence-root-map
+        name: root-map
+    spec:
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 1001
+      initContainers:
+        - name: root-map-init
+          image: "docker.io/amazon/aws-cli:latest"
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              aws configure set aws_access_key_id -- "${S3_ACCESS_KEY}"
+              aws configure set aws_secret_access_key -- "${S3_SECRET_KEY}"
+              aws configure set default.region -- "${S3_REGION}"
+              aws configure set default.endpoint_url -- "https://serenditree-data.sos-${S3_REGION}.exo.io"
+              test -f "${MBTILES}" || aws s3 cp "s3://${MBTILES_SOS}" "${MBTILES}"
+              chown -R 1001:0 "${MBTILES_DIR}"
+          env:
+            - name: S3_REGION
+              value: {{ .Values.global.zone.storage1 }}
+            - name: MBTILES_SOS
+              value: data/osm.mbtiles
+            - name: MBTILES_DIR
+              value: {{ .Values.rootMap.dataMountPath }}
+            - name: MBTILES
+              value: {{ .Values.rootMap.dataMountPath }}/osm.mbtiles
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rootMap.secret }}
+                  key: apikey
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rootMap.secret }}
+                  key: secret
+          volumeMounts:
+            - mountPath: {{ .Values.rootMap.dataMountPath }}
+              name: {{ .Values.rootMap.dataVolume }}
+      containers:
+        - name: root-map-proxy
+          image: "quay.io/serenditree/nginx:latest"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: OTEL_ENABLED
+              value: "on"
+            - name: OTEL_HOST
+              value: {{ .Values.rootMap.otlp.host | quote }}
+            - name: OTEL_SERVICE
+              value: "root-map"
+            - name: OTEL_SPAN
+              value: "serve"
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              port: 8080
+              path: "/index.json"
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              port: 8080
+              path: "/index.json"
+            failureThreshold: 20
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 200Mi
+            limits:
+              cpu: 200m
+              memory: 200Mi
+          securityContext:
+            runAsGroup: 1001
+            runAsUser: 1001
+          volumeMounts:
+            - name: {{ .Values.rootMap.config }}
+              mountPath: /serenditree/template
+            - name: {{ .Values.rootMap.cacheVolume }}
+              mountPath: /serenditree/cache
+        - name: root-map
+          image: "quay.io/serenditree/root-map:latest"
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8081
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              port: 8081
+              path: "/index.json"
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              port: 8081
+              path: "/index.json"
+            failureThreshold: 20
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 200Mi
+            limits:
+              memory: 200Mi
+          securityContext:
+            runAsGroup: 1001
+            runAsUser: 1001
+          volumeMounts:
+            - name: {{ .Values.rootMap.dataVolume }}
+              mountPath: {{ .Values.rootMap.dataMountPath }}
+      volumes:
+        {{- if .Values.rootMap.dataVolumeRWX }}
+        - name: {{ .Values.rootMap.dataVolume }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.rootMap.dataVolume }}
+        {{- end }}
+        - name: {{ .Values.rootMap.config }}
+          configMap:
+            name: {{ .Values.rootMap.config }}
+{{/*      affinity:*/}}
+{{/*        nodeAffinity:*/}}
+{{/*          requiredDuringSchedulingIgnoredDuringExecution:*/}}
+{{/*            nodeSelectorTerms:*/}}
+{{/*              - matchExpressions:*/}}
+{{/*                  - key: serenditree.io/node-role*/}}
+{{/*                    operator: In*/}}
+{{/*                    values:*/}}
+{{/*                      - root*/}}
+      tolerations:
+        - key: serenditree.io/node-taint
+          value: "root"
+          operator: Equal
+          effect: NoSchedule
+  podManagementPolicy: Parallel
+  {{- if not .Values.rootMap.dataVolumeRWX }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  volumeClaimTemplates:
+    {{- range (list .Values.rootMap.cacheVolume .Values.rootMap.dataVolume) }}
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: {{ . }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ $.Values.rootMap.volumeSize }}
+        volumeMode: Filesystem
+    {{- end }}
+  {{- end }}

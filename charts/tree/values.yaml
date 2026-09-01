@@ -1,0 +1,179 @@
+########################################################################################################################
+# Global
+########################################################################################################################
+global:
+  context: ~
+  clusterDomain: ~
+  host: ~
+  gateway: ~
+  issuer: ~
+  email: ~
+  stage: ~
+  zone:
+    compute1: ~
+    storage1: ~
+    storage2: ~
+  revision: "dev"
+  argocdNamespace: "terra-argocd"
+  destinationServer: "https://kubernetes.default.svc"
+  repository: "git@github.com:serenditree/trunk.git"
+  terraPath: "charts/terra"
+  terraPrefix: "terra-"
+  rootPath: "charts/root"
+  rootPrefix: "root-"
+  path: "charts"
+  wait: ~
+  automated:
+    prune: true
+    selfHeal: true
+  retry:
+    limit: -1
+    backoff:
+      duration: 5s
+      factor: 2
+      maxDuration: 3m
+########################################################################################################################
+# Serenditree
+########################################################################################################################
+serenditree:
+  wave: 0
+  name: serenditree
+########################################################################################################################
+# Terra
+########################################################################################################################
+terraArgocd:
+  enabled: true
+  wave: 1
+  name: terra-argocd
+  namespace: terra-argocd
+terraCilium:
+  enabled: true
+  wave: 1
+  name: terra-cilium
+  namespace: kube-system
+  parameters:
+    cluster:
+      name: ~
+    k8sServiceHost: ~
+terraVault:
+  enabled: true
+  wave: 1
+  name: terra-vault
+  namespace: terra-vault
+terraCerts:
+  enabled: true
+  wave: 1
+  name: terra-certs
+  namespace: terra-certs
+terraSQL:
+  enabled: true
+  wave: 2
+  name: terra-sql
+  namespace: terra-sql
+  parameters:
+    plugins:
+      barman:
+        repoUrl: https://github.com/cloudnative-pg/plugin-barman-cloud
+        targetRevision: v0.15.0
+terraStreams:
+  enabled: true
+  wave: 2
+  name: terra-streams
+  namespace: terra-streams
+  parameters:
+    kafdrop:
+      enabled: false
+terraCollect:
+  enabled: true
+  wave: 2
+  name: terra-collect
+  namespace: terra-collect
+terraScope:
+  enabled: true
+  wave: 2
+  name: terra-scope
+  namespace: terra-scope
+terraCache:
+  wave: 2
+  name: terra-cache
+  namespace: terra-cache
+terraTesting:
+  enabled: true
+  wave: 2
+  name: terra-testing
+  namespace: terra-testing
+terraGateway:
+  enabled: true
+  wave: 3
+  name: terra-gateway
+  namespace: terra-gateway
+  parameters:
+    traefik: true
+    envoy: false
+    loadBalancerID: ~
+terraTekton:
+  enabled: true
+  wave: 5
+  name: terra-tekton
+  namespace: tekton-pipelines
+terraScale:
+  enabled: false
+  wave: 5
+  name: terra-scale
+  namespace: kube-system
+  parameters:
+    karpenter: ~
+    clusterAutoscaler: ~
+    securityGroup: ~
+    privateNetwork: ~
+    antiAffinityGroup: ~
+    minSize: 3
+    maxSize: 6
+    autoscalingGroupNames: []
+    autoscalingGroups: []
+########################################################################################################################
+# Root
+########################################################################################################################
+rootUser:
+  enabled: true
+  wave: 3
+  name: root-user
+  namespace: serenditree
+rootSeed:
+  enabled: true
+  wave: 3
+  name: root-seed
+  namespace: serenditree
+  parameters:
+    s3:
+      endpoint: ~
+      region: ~
+rootWind:
+  enabled: true
+  wave: 3
+  name: root-wind
+  namespace: serenditree
+rootMap:
+  enabled: true
+  wave: 3
+  name: root-map
+  namespace: serenditree
+########################################################################################################################
+# Branch
+########################################################################################################################
+branch:
+  enabled: true
+  wave: 4
+  name: branch
+  namespace: serenditree
+  parameters:
+    logLevel: INFO
+    oidc: []
+########################################################################################################################
+# Leaf
+########################################################################################################################
+leaf:
+  enabled: true
+  wave: 4
+  name: leaf
+  namespace: serenditree

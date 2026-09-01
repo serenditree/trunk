@@ -1,0 +1,22 @@
+global:
+  context: ~
+  zone:
+    storage1: ~
+  wait: ~
+  wave: ~
+rootUser:
+  clusterDomain: ~
+  clusterName: root-user-cluster
+  db:
+    secretRef: root-user-owner
+    name: serenditree
+    user: serenditree
+  root:
+    secretRef: root-user-root
+    user: postgres
+  init:
+    configMap: root-user-init
+    recovery: false
+  s3:
+    objectStore: root-user-backup
+    secretRef: root-user-backup

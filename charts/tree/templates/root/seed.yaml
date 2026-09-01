@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.rootSeed.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.rootSeed.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{ .Values.global.rootPath }}/{{ trimPrefix .Values.global.rootPrefix .Values.rootSeed.name }}"
+    targetRevision: {{ .Values.rootSeed.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+        - name: global.wait
+          value: {{ .Values.global.wait | quote }}
+        - name: global.wave
+          value: {{ .Values.rootSeed.wave | quote }}
+        - name: global.context
+          value: {{ .Values.global.context | quote }}
+        - name: global.zone.storage1
+          value: {{ .Values.global.zone.storage1 | quote }}
+        - name: opensearch.clusterDomain
+          value: {{ .Values.global.clusterDomain | quote }}
+        - name: rootSeed.s3.endpoint
+          value: {{ .Values.rootSeed.parameters.s3.endpoint | quote }}
+        - name: rootSeed.s3.region
+          value: {{ .Values.rootSeed.parameters.s3.region | quote }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.rootSeed.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.leaf.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.leaf.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{ .Values.global.path }}/{{ .Values.leaf.name }}"
+    targetRevision: {{ .Values.leaf.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+        - name: global.wait
+          value: {{ .Values.global.wait | quote }}
+        - name: global.wave
+          value: {{ .Values.leaf.wave | quote }}
+        - name: global.context
+          value: {{ .Values.global.context }}
+        - name: global.stage
+          value: {{ .Values.global.stage }}
+        - name: global.issuer
+          value: {{ .Values.global.issuer }}
+        - name: global.host
+          value: {{ .Values.global.host | quote }}
+        - name: global.gateway
+          value: {{ .Values.global.gateway | quote }}
+        - name: leaf.otlp.host
+          value: "collect.{{ .Values.terraCollect.namespace }}.svc.{{ .Values.global.clusterDomain }}"
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.leaf.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true

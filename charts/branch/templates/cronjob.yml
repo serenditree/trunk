@@ -1,0 +1,19 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fence-cleanup
+  labels:
+    {{- include "st-default-labels" . }}
+spec:
+  schedule: "0 3 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: fence-cleanup
+              image: docker.io/alpine/curl:latest
+              args:
+                - 'http://branch-user.serenditree.svc.cluster.local:8080/api/v1/internal/fence/cleanup'
+          restartPolicy: OnFailure

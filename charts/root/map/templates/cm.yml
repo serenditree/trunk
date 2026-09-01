@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.rootMap.config }}
+  labels:
+    {{- include "st-default-labels" . }}
+data:
+  serenditree.conf: |
+{{ .Files.Get "resources/serenditree.conf" | indent 4 }}

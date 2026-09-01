@@ -1,0 +1,40 @@
+{{- if not (hasSuffix "-local" .Values.global.context) }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.terraCerts.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.terraCerts.wave | quote }}
+    argocd.argoproj.io/sync-wave: {{ .Values.terraCerts.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{ .Values.global.terraPath }}/{{ trimPrefix .Values.global.terraPrefix .Values.terraCerts.name }}"
+    targetRevision: {{ .Values.terraCerts.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+        - name: global.wait
+          value: {{ .Values.global.wait | quote }}
+        - name: global.wave
+          value: {{ .Values.terraCerts.wave | quote }}
+        - name: global.host
+          value: {{ .Values.global.host }}
+        - name: letsencrypt.issuer
+          value: {{ .Values.global.issuer }}
+        - name: letsencrypt.email
+          value: {{ .Values.global.email }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.terraCerts.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+{{- end }}

@@ -1,0 +1,30 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: fence-root-map
+spec:
+  endpointSelector:
+    matchLabels:
+      serenditree.io/policy: fence-root-map
+  ingress:
+    - fromEntities:
+        - world
+        - cluster
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: terra-collect
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toFQDNs:
+        - matchName: serenditree-data.sos-{{ $.Values.global.zone.storage1 }}.exo.io

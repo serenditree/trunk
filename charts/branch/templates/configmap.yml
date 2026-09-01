@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: branch
+  labels:
+    {{- include "st-default-labels" . }}
+data:
+  SERENDITREE_HOST: "https://{{ .Values.global.host }}"
+  SERENDITREE_LOG_LEVEL: {{ .Values.branch.logLevel | quote }}
+  SERENDITREE_SEED_RETENTION: {{ .Values.branch.waterRetention | quote }}
+  QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: {{ .Values.branch.otlp.endpoint | quote }}
+  QUARKUS_SHUTDOWN_TIMEOUT: {{ .Values.branch.shutdownTimeout | quote }}
+  QUARKUS_SWAGGER_UI_ALWAYS_INCLUDE: "false"

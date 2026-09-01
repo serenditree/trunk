@@ -1,0 +1,5 @@
+# Additional components to install along with the Tekton helm chart.
+resources:
+  - https://github.com/tektoncd/dashboard/releases/download/v0.72.0/release-full.yaml
+  - https://github.com/tektoncd/triggers/releases/download/v0.37.0/release.yaml
+  - https://github.com/tektoncd/triggers/releases/download/v0.37.0/interceptors.yaml

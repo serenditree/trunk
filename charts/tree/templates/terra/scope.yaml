@@ -1,0 +1,46 @@
+{{- if .Values.terraScope.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.terraScope.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.terraScope.wave | quote }}
+    argocd.argoproj.io/sync-wave: {{ .Values.terraScope.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+    - pre-delete-finalizer.argocd.argoproj.io
+    - pre-delete-finalizer.argocd.argoproj.io/cleanup
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{ .Values.global.terraPath }}/{{ trimPrefix .Values.global.terraPrefix .Values.terraScope.name }}"
+    targetRevision: {{ .Values.terraScope.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+        - name: global.wait
+          value: {{ .Values.global.wait | quote }}
+        - name: global.wave
+          value: {{ .Values.terraScope.wave | quote }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.terraScope.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data/admin-password
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/template/metadata/annotations/checksum~1secret
+{{- end }}

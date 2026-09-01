@@ -1,0 +1,31 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: Trigger
+metadata:
+  name: github
+  labels:
+    app.kubernetes.io/component: tekton
+spec:
+  serviceAccountName: el-serenditree
+  interceptors:
+    - ref:
+        kind: ClusterInterceptor
+        name: github
+      params:
+        - name: secretRef
+          value:
+            secretName: github-webhook
+            secretKey: secret
+        - name: eventTypes
+          value:
+            - pull_request
+    - ref:
+        kind: ClusterInterceptor
+        name: cel
+      params:
+        - name: filter
+          value: body.action in ['opened', 'reopened', 'synchronize']
+  bindings:
+    - ref: github
+  template:
+    ref: github

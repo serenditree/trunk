@@ -1,0 +1,67 @@
+global:
+  waitResources: argocd-wait
+  wait: ~
+argo-cd:
+  controller:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: 500m
+        memory: 2Gi
+  repoServer:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 500Mi
+      limits:
+        cpu: 500m
+        memory: 500Mi
+  configs:
+    cm:
+      resource.exclusions: |
+        - apiGroups:
+            - tekton.dev
+          kinds:
+            - PipelineRun
+            - TaskRun
+        - apiGroups:
+            - ''
+            - discovery.k8s.io
+          kinds:
+            - Endpoints
+            - EndpointSlice
+        - apiGroups:
+            - coordination.k8s.io
+          kinds:
+            - Lease
+        - apiGroups:
+            - authentication.k8s.io
+            - authorization.k8s.io
+          kinds:
+            - SelfSubjectReview
+            - TokenReview
+            - LocalSubjectAccessReview
+            - SelfSubjectAccessReview
+            - SelfSubjectRulesReview
+            - SubjectAccessReview
+        - apiGroups:
+            - certificates.k8s.io
+          kinds:
+            - CertificateSigningRequest
+        - apiGroups:
+            - cert-manager.io
+          kinds:
+            - CertificateRequest
+        - apiGroups:
+            - cilium.io
+          kinds:
+            - CiliumIdentity
+            - CiliumEndpoint
+            - CiliumEndpointSlice
+      resource.customizations.health.monitoring.coreos.com_Prometheus: |
+        hs = {}
+        hs.status = "Healthy"
+        hs.message = "Health check disabled"
+        return hs

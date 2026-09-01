@@ -1,0 +1,19 @@
+global:
+  context: ~
+  wait: ~
+  wave: ~
+kafka:
+  name: root-wind
+  topics:
+    - seed-created
+    - seed-deleted
+    - user-deleted
+  replicas: 3
+  partitions: 4
+  replicationFactor: 2
+  storage: 20
+  logRetentionHours: 12
+  messageMaxBytes: 1000000
+  messageBatchFactor: 1
+  requestTimeoutMs: 1000
+  compressionType: uncompressed

@@ -1,0 +1,10 @@
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vault
+spec:
+  minAvailable: 1 # Avoid sealing (karpenter)!
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: terra-vault

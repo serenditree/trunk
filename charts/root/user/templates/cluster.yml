@@ -1,0 +1,63 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ .Values.rootUser.clusterName }}
+  labels:
+    serenditree.io/policy: fence-root-user
+    serenditree.io/otel: root-user
+spec:
+  instances: 3
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  storage:
+    size: 10Gi
+{{/*  walStorage:*/}}
+{{/*    size: 20Gi*/}}
+  enablePDB: true
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: {{ .Values.rootUser.root.secretRef }}
+  bootstrap:
+  {{- if not .Values.rootUser.init.recovery }}
+    initdb:
+      database: {{ .Values.rootUser.db.name }}
+      owner: {{ .Values.rootUser.db.user }}
+      secret:
+        name: {{ .Values.rootUser.db.secretRef }}
+      postInitApplicationSQLRefs:
+        configMapRefs:
+          - name: {{ .Values.rootUser.init.configMap }}
+            key: init.sql
+  {{- else }}
+    recovery:
+      source: backup
+  externalClusters:
+    - name: backup
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: {{ .Values.rootUser.s3.objectStore }}
+          serverName: {{ .Values.rootUser.clusterName }}
+  {{- end }}
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: {{ .Values.rootUser.s3.objectStore }}
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
+{{/*    nodeSelector:*/}}
+{{/*      serenditree.io/node-role: root*/}}
+    tolerations:
+      - key: serenditree.io/node-taint
+        value: "root"
+        operator: Equal
+        effect: NoSchedule

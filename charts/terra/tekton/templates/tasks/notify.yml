@@ -1,0 +1,47 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: serenditree-notify
+  labels:
+    app.kubernetes.io/component: tekton
+spec:
+  description: 'Task notify about pipeline completion.'
+  params:
+    - name: pipeline
+      type: string
+      description: 'Name of the pipeline.'
+    - name: run
+      type: string
+      description: 'Name of the pipeline run.'
+    - name: start
+      type: string
+      default: ""
+      description: 'Start time in seconds since the Epoch.'
+    - name: git-sha
+      type: string
+      default: ""
+      description: 'SHA of the latest commit.'
+    - name: image-sha
+      type: string
+      default: ""
+      description: 'SHA of the created container image.'
+    - name: status
+      type: string
+      description: 'Aggregated status of the pipeline.'
+    - name: details
+      type: array
+      description: 'Array of task:status pairs.'
+  steps:
+    - name: notify
+      image: docker.io/alpine/curl:latest
+      env:
+        - name: WEBHOOK
+          valueFrom:
+            secretKeyRef:
+              name: slack-webhook
+              key: webhook
+      args:
+        - $(params.details)
+      script: |
+{{ .Files.Get "resources/notify.sh" | indent 8 }}

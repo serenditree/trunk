@@ -1,0 +1,113 @@
+{{- if .Values.terraScale.karpenter }}
+---
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: serenditree
+spec:
+  template:
+    metadata:
+      labels:
+        serenditree.io/node-role: default
+    spec:
+      nodeClassRef:
+        group: karpenter.exoscale.com
+        kind: ExoscaleNodeClass
+        name: standard
+      requirements:
+        - key: "node.kubernetes.io/instance-type"
+          operator: In
+          values:
+            - "standard.medium"
+            - "standard.large"
+        - key: "topology.csi.exoscale.com/zone"
+          operator: Exists
+      expireAfter: Never
+      startupTaints:
+        - key: node.cilium.io/agent-not-ready
+          value: "true"
+          effect: NoExecute
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 20m
+    budgets:
+      - nodes: "20%"
+  limits:
+    cpu: 20
+    memory: 40Gi
+---
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: serenditree-build
+spec:
+  template:
+    metadata:
+      labels:
+        serenditree.io/node-role: build
+    spec:
+      nodeClassRef:
+        group: karpenter.exoscale.com
+        kind: ExoscaleNodeClass
+        name: standard
+      requirements:
+        - key: "node.kubernetes.io/instance-type"
+          operator: In
+          values:
+            - "standard.large"
+        - key: "topology.csi.exoscale.com/zone"
+          operator: Exists
+      expireAfter: Never
+      taints:
+        - key: serenditree.io/node-taint
+          value: "build"
+          effect: NoSchedule
+      startupTaints:
+        - key: node.cilium.io/agent-not-ready
+          value: "true"
+          effect: NoExecute
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 20m
+    budgets:
+      - nodes: "20%"
+{{- if gt (.Values.terraScale.karpenterReplicas | int) 0 }}
+---
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: serenditree-root
+spec:
+  replicas: {{ .Values.terraScale.karpenterReplicas | int }}
+  template:
+    metadata:
+      labels:
+        serenditree.io/node-role: root
+    spec:
+      nodeClassRef:
+        group: karpenter.exoscale.com
+        kind: ExoscaleNodeClass
+        name: standard
+      requirements:
+        - key: "node.kubernetes.io/instance-type"
+          operator: In
+          values:
+            - "standard.large"
+      expireAfter: Never
+      taints:
+        - key: serenditree.io/node-taint
+          value: "root"
+          effect: NoSchedule
+      startupTaints:
+        - key: node.cilium.io/agent-not-ready
+          value: "true"
+          effect: NoExecute
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 20m
+    budgets:
+      - nodes: "20%"
+  limits:
+    nodes: {{ .Values.terraScale.karpenterReplicas | int }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,16 @@
+{{- if .Values.terraScale.karpenter }}
+apiVersion: karpenter.exoscale.com/v1
+kind: ExoscaleNodeClass
+metadata:
+  name: standard
+spec:
+  imageTemplateSelector:
+    variant: "standard"
+  diskSize: 64
+  securityGroupSelectorTerms:
+    - id: {{ .Values.terraScale.securityGroup }}
+  privateNetworkSelectorTerms:
+    - id: {{ .Values.terraScale.privateNetwork }}
+  antiAffinityGroupSelectorTerms:
+    - id: {{ .Values.terraScale.antiAffinityGroup }}
+{{- end }}

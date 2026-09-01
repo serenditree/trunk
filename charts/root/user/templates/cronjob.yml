@@ -1,0 +1,83 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: root-user-backup
+  labels:
+    {{- include "st-default-labels" . }}
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            serenditree.io/policy: fence-root-user
+            serenditree.io/job: backup
+        spec:
+          volumes:
+            - name: user-backup
+              emptyDir: { }
+          restartPolicy: OnFailure
+          initContainers:
+            - name: postgres
+              image: quay.io/serenditree/root-user:latest
+              command:
+                - /bin/sh
+                - -c
+              args:
+                - >-
+                  pg_dump
+                  --data-only
+                  --load-via-partition-root
+                  --quote-all-identifiers
+                  --no-password | gzip > /user-backup/user-backup.gz
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: root-user-root
+                      key: password
+                - name: PGDATABASE
+                  value: "serenditree"
+                - name: PGUSER
+                  value: "postgres"
+                - name: PGHOST
+                  value: "root-user"
+                - name: PGPORT
+                  value: "5432"
+              volumeMounts:
+                - mountPath: "/user-backup"
+                  name: user-backup
+          containers:
+            - name: s3
+              image: docker.io/amazon/aws-cli:latest
+              command:
+                - /bin/sh
+                - -c
+              args:
+                - |
+                  aws configure set aws_access_key_id -- "${S3_ACCESS_KEY}"
+                  aws configure set aws_secret_access_key -- "${S3_SECRET_KEY}"
+                  aws configure set default.region -- "${S3_REGION}"
+                  aws configure set default.endpoint_url -- "https://serenditree-backup-user.sos-${S3_REGION}.exo.io"
+                  aws s3 cp /user-backup/user-backup.gz s3://pgdump/user-backup.gz
+              env:
+                - name: S3_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: root-user-backup
+                      key: ACCESS_KEY_ID
+                - name: S3_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: root-user-backup
+                      key: ACCESS_SECRET_KEY
+                - name: S3_REGION
+                  valueFrom:
+                    secretKeyRef:
+                      name: root-user-backup
+                      key: ACCESS_REGION
+              volumeMounts:
+                - mountPath: "/user-backup"
+                  name: user-backup

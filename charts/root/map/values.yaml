@@ -1,0 +1,23 @@
+global:
+  context: ~
+  host: ~
+  gateway: ~
+  issuer: ~
+  stage: ~
+  zone:
+    storage1: ~
+  wait: ~
+  wave: ~
+rootMap:
+  rateLimit: true
+  minReplicas: 1
+  maxReplicas: 3
+  volumeSize: 10Gi
+  cacheVolume: root-map-cache
+  dataVolume: root-map-data
+  dataVolumeRWX: false
+  dataMountPath: "/serenditree/data"
+  secret: root-map
+  config: root-map
+  otlp:
+    host: ~

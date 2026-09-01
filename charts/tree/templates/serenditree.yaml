@@ -1,0 +1,119 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.serenditree.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.serenditree.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{ .Values.global.path }}/tree"
+    targetRevision: {{ .Values.serenditree.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+########################################################################################################################
+# Global
+########################################################################################################################
+        - name: global.wait
+          value: {{ .Values.global.wait | quote }}
+        - name: global.context
+          value: {{ .Values.global.context }}
+        - name: global.clusterDomain
+          value: {{ .Values.global.clusterDomain }}
+        - name: global.host
+          value: {{ .Values.global.host }}
+        - name: global.issuer
+          value: {{ .Values.global.issuer }}
+        - name: global.email
+          value: {{ .Values.global.email }}
+        - name: global.stage
+          value: {{ .Values.global.stage }}
+        - name: global.zone.compute1
+          value: {{ .Values.global.zone.compute1 }}
+        - name: global.zone.storage1
+          value: {{ .Values.global.zone.storage1 }}
+        - name: global.zone.storage2
+          value: {{ .Values.global.zone.storage2 }}
+        {{- if .Values.terraGateway.parameters.traefik }}
+        - name: global.gateway
+          value: traefik
+        {{- else if .Values.terraGateway.parameters.envoy }}
+        - name: global.gateway
+          value: envoy
+        {{- end }}
+########################################################################################################################
+# TerraStreams
+########################################################################################################################
+        - name: terraStreams.parameters.kafdrop.enabled
+          value: {{ .Values.terraStreams.parameters.kafdrop.enabled | quote }}
+########################################################################################################################
+# TerraGateway
+########################################################################################################################
+        - name: terraGateway.parameters.traefik
+          value:  {{ .Values.terraGateway.parameters.traefik | quote }}
+        - name: terraGateway.parameters.envoy
+          value:  {{ .Values.terraGateway.parameters.envoy | quote }}
+        - name: terraGateway.parameters.loadBalancerID
+          value: {{ .Values.terraGateway.parameters.loadBalancerID }}
+########################################################################################################################
+# TerraCilium
+########################################################################################################################
+        - name: terraCilium.enabled
+          value: {{ .Values.terraCilium.enabled | quote }}
+        - name: terraCilium.parameters.cluster.name
+          value: {{ .Values.terraCilium.parameters.cluster.name }}
+        - name: terraCilium.parameters.k8sServiceHost
+          value: {{ .Values.terraCilium.parameters.k8sServiceHost }}
+########################################################################################################################
+# TerraScale
+########################################################################################################################
+        - name: terraScale.enabled
+          value: {{ .Values.terraScale.enabled | quote }}
+        - name: terraScale.parameters.karpenter
+          value:  {{ .Values.terraScale.parameters.karpenter | quote }}
+        - name: terraScale.parameters.clusterAutoscaler
+          value:  {{ .Values.terraScale.parameters.clusterAutoscaler | quote }}
+        - name: terraScale.parameters.securityGroup
+          value: {{ .Values.terraScale.parameters.securityGroup | quote }}
+        - name: terraScale.parameters.privateNetwork
+          value: {{ .Values.terraScale.parameters.privateNetwork | quote }}
+        - name: terraScale.parameters.antiAffinityGroup
+          value: {{ .Values.terraScale.parameters.antiAffinityGroup | quote }}
+          {{- $index := 0 }}
+          {{- range .Values.terraScale.parameters.autoscalingGroupNames }}
+        - name: terraScale.parameters.autoscalingGroupNames[{{ $index }}]
+          value: {{ . | quote }}
+          {{- $index = add1 $index }}
+          {{- end }}
+########################################################################################################################
+# RootSeed
+########################################################################################################################
+        - name: rootSeed.parameters.s3.endpoint
+          value: {{ .Values.rootSeed.parameters.s3.endpoint | quote }}
+        - name: rootSeed.parameters.s3.region
+          value: {{ .Values.rootSeed.parameters.s3.region | quote }}
+########################################################################################################################
+# Branch
+########################################################################################################################
+        - name: branch.parameters.logLevel
+          value: {{ .Values.branch.parameters.logLevel }}
+          {{- $index = 0 }}
+          {{- range .Values.branch.parameters.oidc }}
+        - name: branch.parameters.oidc[{{ $index }}]
+          {{- $index = add1 $index }}
+          value: {{ . }}
+          {{- end }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.global.argocdNamespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

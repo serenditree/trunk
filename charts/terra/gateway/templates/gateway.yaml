@@ -1,0 +1,104 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: {{ .Values.terraGateway.name }}
+spec:
+{{- if .Values.terraGateway.envoy }}
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+{{- else }}
+  controllerName: traefik.io/gateway-controller
+{{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Values.terraGateway.name }}
+  annotations:
+    cert-manager.io/cluster-issuer: lets-encrypt-{{ .Values.global.issuer }}
+spec:
+  gatewayClassName: {{ .Values.terraGateway.name }}
+{{- if .Values.terraGateway.envoy }}
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: {{ .Values.terraGateway.proxyName }}
+{{- end }}
+  listeners:
+    # HTTP-Redirect
+    - name: http-www
+      protocol: HTTP
+      port: 80
+      hostname: www.{{ .Values.global.host }}
+      allowedRoutes:
+        kinds:
+          - group: gateway.networking.k8s.io
+            kind: HTTPRoute
+        namespaces:
+          from: Selector
+          selector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - terra-gateway
+                  - terra-certs
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: {{ .Values.global.host }}
+      allowedRoutes:
+        kinds:
+          - group: gateway.networking.k8s.io
+            kind: HTTPRoute
+        namespaces:
+          from: Selector
+          selector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - terra-gateway
+                  - terra-certs
+    # WWW-Redirect
+    - name: https-www
+      protocol: HTTPS
+      port: 443
+      hostname: www.{{ .Values.global.host }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ''
+            kind: Secret
+            name: lets-encrypt-{{ .Values.global.issuer }}
+      allowedRoutes:
+        kinds:
+          - group: gateway.networking.k8s.io
+            kind: HTTPRoute
+        namespaces:
+          from: Same
+    # Serenditree.io
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: {{ .Values.global.host }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ''
+            kind: Secret
+            name: lets-encrypt-{{ .Values.global.issuer }}
+      allowedRoutes:
+        kinds:
+          - group: gateway.networking.k8s.io
+            kind: HTTPRoute
+        namespaces:
+          from: Selector
+          selector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - serenditree
+                  - tekton-pipelines

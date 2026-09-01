@@ -1,0 +1,24 @@
+{{ range without .Values.branch.branches "garden" }}
+{{- $branchName := printf "%s-%s" "branch" . }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $branchName }}
+  labels:
+    {{- include "st-default-labels-range" (dict "name" $branchName "context" $) }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $branchName }}
+  minReplicas: {{ $.Values.branch.minReplicas }}
+  maxReplicas: {{ $.Values.branch.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+{{- end }}

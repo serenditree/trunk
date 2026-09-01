@@ -1,0 +1,12 @@
+global:
+  wait: ~
+  wave: ~
+valkey:
+  fullnameOverride: terra-cache
+  replica:
+    enabled: false
+    replicas: 3
+    persistence:
+      size: ""
+  podDisruptionBudget:
+    enabled: true

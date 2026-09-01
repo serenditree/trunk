@@ -1,0 +1,24 @@
+global:
+  context: ~
+  host: ~
+  gateway: ~
+  issuer: ~
+  stage: ~
+  wait: ~
+  wave: ~
+branch:
+  rateLimit: true
+  branches:
+    - user
+    - seed
+    - garden
+    - poll
+  minReplicas: 1
+  maxReplicas: 3
+  waterRetention: 21
+  logLevel: INFO
+  shutdownTimeout: 10 # seconds
+  otlp:
+    endpoint: ~
+    traceRatio: 0.3
+  oidc: []

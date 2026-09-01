@@ -1,0 +1,61 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Pooler
+metadata:
+  name: root-user
+  labels:
+    serenditree.io/policy: fence-root-user
+    serenditree.io/otel: root-user-pooler
+spec:
+  cluster:
+    name: {{ .Values.rootUser.clusterName }}
+  instances: 3
+  type: rw
+  template:
+    metadata:
+      labels:
+        serenditree.io/policy: fence-root-user
+        serenditree.io/otel: root-user-pooler
+        app: pooler
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: pooler
+              topologyKey: kubernetes.io/hostname
+{{/*        nodeAffinity:*/}}
+{{/*          requiredDuringSchedulingIgnoredDuringExecution:*/}}
+{{/*            nodeSelectorTerms:*/}}
+{{/*              - matchExpressions:*/}}
+{{/*                  - key: serenditree.io/node-role*/}}
+{{/*                    operator: In*/}}
+{{/*                    values:*/}}
+{{/*                      - root*/}}
+      containers:
+        - name: pgbouncer
+          image: ghcr.io/cloudnative-pg/pgbouncer:latest
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+  serviceTemplate:
+    metadata:
+      labels:
+        serenditree.io/policy: fence-root-user
+        serenditree.io/otel: root-user-pooler
+        app: pooler
+    spec:
+      type: ClusterIP
+  pgbouncer:
+    poolMode: transaction
+    parameters:
+      max_client_conn: "2000"
+      default_pool_size: "30"
+      min_pool_size: "15"
+      reserve_pool_size: "10"
+      max_db_connections: "80"

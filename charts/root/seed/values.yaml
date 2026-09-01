@@ -1,0 +1,95 @@
+global:
+  context: ~
+  zone:
+    storage1: ~
+  wait: ~
+  wave: ~
+rootSeed:
+  configEnv: root-seed-config-env
+  backup:
+    endpoint: http://root-seed:9200/_snapshot/seed-backup
+    retention: root-seed-backup-retention
+  s3:
+    endpoint: ~
+    region: ~
+opensearch:
+  clusterName: root-seed
+  nodeGroup: master
+  masterService: root-seed
+  fullnameOverride: root-seed
+  roles:
+    - master
+    - data
+  replicas: 3
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 1Gi
+    limits:
+      cpu: 200m
+      memory: 1Gi
+  opensearchJavaOpts: "-Xmx512M -Xms512M"
+  config:
+    opensearch.yml: |
+      cluster:
+        name: root-seed
+      network:
+        host: 0.0.0.0
+      plugins:
+        ml_commons:
+          sync_up_job_interval_in_seconds: 0
+      logger:
+        org:
+          opensearch:
+            jobscheduler:
+              sweeper: WARN
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+    - name: DISABLE_SECURITY_PLUGIN
+      value: "true"
+  envFrom:
+    - configMapRef:
+        name: root-seed-config-env
+  labels:
+    serenditree.io/pdb: root-seed
+    serenditree.io/policy: fence-root-seed
+    serenditree.io/otel: root-seed
+  service:
+    labels:
+      serenditree.io/policy: fence-root-seed
+      serenditree.io/otel: root-seed
+    labelsHeadless:
+      serenditree.io/policy: fence-root-seed
+      serenditree.io/otel: root-seed
+  persistence:
+    enabled: true
+    size: 10Gi
+  securityConfig:
+    enabled: false
+  protocol: http
+  sysctlInit:
+    enabled: true
+  plugins:
+    enabled: true
+    installList:
+      - repository-s3
+  keystore:
+    - secretName: root-seed
+  antiAffinity: hard
+  #nodeAffinity:
+  #  requiredDuringSchedulingIgnoredDuringExecution:
+  #    nodeSelectorTerms:
+  #      - matchExpressions:
+  #          - key: serenditree.io/node-role
+  #            operator: In
+  #            values:
+  #              - root
+  tolerations:
+    - key: serenditree.io/node-taint
+      value: "root"
+      operator: Equal
+      effect: NoSchedule
+
+

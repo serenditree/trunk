@@ -1,0 +1,16 @@
+{{- if .Values.rootMap.dataVolumeRWX  }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.rootMap.dataVolume }}
+  labels:
+    {{- include "st-default-labels-component" . }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.rootMap.volumeSize }}
+  volumeMode: Filesystem
+{{- end }}

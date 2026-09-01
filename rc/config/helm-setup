@@ -1,0 +1,16 @@
+argo;https://argoproj.github.io/argo-helm
+autoscaler;https://kubernetes.github.io/autoscaler
+cilium;https://helm.cilium.io
+cnpg;https://cloudnative-pg.github.io/charts
+external-secrets;https://charts.external-secrets.io
+grafana;https://grafana.github.io/helm-charts
+open-telemetry;https://open-telemetry.github.io/opentelemetry-helm-charts
+openbao;https://openbao.github.io/openbao-helm
+opensearch;https://opensearch-project.github.io/helm-charts
+prometheus;https://prometheus-community.github.io/helm-charts
+stakater;https://stakater.github.io/stakater-charts
+strimzi;https://strimzi.io/charts
+tekton;https://cdfoundation.github.io/tekton-helm-chart
+traefik;https://traefik.github.io/charts
+valkey;https://valkey.io/valkey-helm
+victoria;https://victoriametrics.github.io/helm-charts

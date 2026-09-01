@@ -1,0 +1,7 @@
+{{- if .Values.global.wait -}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.global.waitResources }}
+{{- end }}

@@ -1,0 +1,14 @@
+apiVersion: v2
+type: application
+name: terra-tekton
+description: Tekton Pipelines resources.
+version: 0.0.1
+appVersion: 0.0.1
+dependencies:
+  - name: tekton-pipeline
+    repository: https://cdfoundation.github.io/tekton-helm-chart/
+    version: 1.14.0
+  - name: commons
+    repository: oci://quay.io/serenditree/charts
+    version: 0.0.1
+    condition: global.wait

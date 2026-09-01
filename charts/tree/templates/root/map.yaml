@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.rootMap.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.rootMap.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{ .Values.global.rootPath }}/{{ trimPrefix .Values.global.rootPrefix .Values.rootMap.name }}"
+    targetRevision: {{ .Values.rootMap.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+        - name: global.wait
+          value: {{ .Values.global.wait | quote }}
+        - name: global.wave
+          value: {{ .Values.rootMap.wave | quote }}
+        - name: global.context
+          value: {{ .Values.global.context | quote }}
+        - name: global.stage
+          value: {{ .Values.global.stage | quote }}
+        - name: global.issuer
+          value: {{ .Values.global.issuer | quote }}
+        - name: global.host
+          value: {{ .Values.global.host | quote }}
+        - name: global.gateway
+          value: {{ .Values.global.gateway | quote }}
+        - name: global.zone.storage1
+          value: {{ .Values.global.zone.storage1 | quote }}
+        - name: rootMap.otlp.host
+          value: "collect.{{ .Values.terraCollect.namespace }}.svc.{{ .Values.global.clusterDomain }}"
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.rootMap.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,5 @@
+apiVersion: v2
+type: library
+name: commons
+description: Common resources for Serenditree.
+version: 0.0.1

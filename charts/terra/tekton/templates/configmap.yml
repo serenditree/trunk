@@ -1,0 +1,15 @@
+{{- range $cm := list
+(dict "name" "tekton-serenditree" "debug" false)
+(dict "name" "tekton-serenditree-debug" "debug" true) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $cm.name }}
+data:
+  _ST_CONTEXT_TKN: "on"
+  _ST_HOME: "/workspace/buildah"
+  {{- if $cm.debug }}
+  _ST_DEBUG: "on"
+  {{- end }}
+{{- end }}

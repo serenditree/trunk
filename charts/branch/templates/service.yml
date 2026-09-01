@@ -1,0 +1,19 @@
+{{ range without .Values.branch.branches "garden" }}
+{{- $serviceName := printf "%s-%s" "branch" . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  labels:
+    {{- include "st-default-labels-range" (dict "name" $serviceName "context" $) }}
+spec:
+  type: ClusterIP
+  selector:
+    name: {{ $serviceName }}
+  ports:
+    - name: {{ $serviceName }}
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+{{- end }}

@@ -1,0 +1,15 @@
+#file: noinspection HelmChartUnknownValues
+apiVersion: v2
+type: application
+name: terra-certs
+description: Cert-manager resources.
+version: 0.0.1
+appVersion: 0.0.1
+dependencies:
+  - name: cert-manager
+    repository: oci://quay.io/jetstack/charts
+    version: v1.21.2
+  - name: commons
+    repository: oci://quay.io/serenditree/charts
+    version: 0.0.1
+    condition: global.wait

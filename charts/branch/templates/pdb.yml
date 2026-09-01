@@ -1,0 +1,15 @@
+{{ range without .Values.branch.branches "garden" }}
+{{- $branchName := printf "%s-%s" "branch" . }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $branchName }}
+  labels:
+    {{- include "st-default-labels-range" (dict "name" $branchName "context" $) }}
+spec:
+  minAvailable: {{ $.Values.branch.minReplicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $branchName }}
+{{-  end }}

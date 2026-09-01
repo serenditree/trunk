@@ -1,0 +1,60 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: root-map
+  labels:
+    {{- include "st-default-labels" . }}
+spec:
+  parentRefs:
+    - name: serenditree
+      namespace: terra-gateway
+  hostnames:
+    - {{ .Values.global.host }}
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: root-map
+          port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /styles
+        - path:
+            type: PathPrefix
+            value: /fonts
+        - path:
+            type: PathPrefix
+            value: /data
+{{- if .Values.rootMap.rateLimit }}
+{{- if eq .Values.global.gateway "traefik" }}
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: root-map-ratelimit
+{{ else if eq .Values.global.gateway "envoy" }}
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: root-map
+  labels:
+    {{- include "st-default-labels" . }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: root-map
+  rateLimit:
+    type: Global
+    global:
+      rules:
+        - limit:
+            requests: 42
+            unit: Second
+{{- end }}
+{{- end }}

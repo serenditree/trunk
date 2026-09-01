@@ -1,0 +1,8 @@
+global:
+  wait: ~
+  wave: ~
+cloudnative-pg:
+  fullnameOverride: terra-sql
+  config:
+    data:
+      INHERITED_LABELS: serenditree.io/policy, serenditree.io/otel, argocd.argoproj.io/sync-wave

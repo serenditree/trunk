@@ -1,0 +1,12 @@
+{{- range $path, $_ := .Files.Glob "resources/dashboards/*.json" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: serenditree-{{ base $path | trimSuffix ".json" }}-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  {{ base $path }}: |
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}

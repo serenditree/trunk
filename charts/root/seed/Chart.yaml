@@ -1,0 +1,14 @@
+#file: noinspection HelmChartUnknownValues
+apiVersion: v2
+type: application
+name: root-seed
+description: OpenSearch resources.
+version: 0.0.1
+appVersion: 0.0.1
+dependencies:
+  - name: opensearch
+    repository: https://opensearch-project.github.io/helm-charts
+    version: 3.8.0
+  - name: commons
+    repository: oci://quay.io/serenditree/charts
+    version: 0.0.1

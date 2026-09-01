@@ -1,0 +1,67 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: leaf
+  labels:
+    {{- include "st-default-labels" . }}
+spec:
+  revisionHistoryLimit: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      name: leaf
+  template:
+    metadata:
+      labels:
+        {{- include "st-default-labels" . | indent 4 }}
+        name: leaf
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: leaf
+          image: "quay.io/serenditree/leaf:latest"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: OTEL_HOST
+              value: {{ .Values.leaf.otlp.host | quote }}
+            - name: SERENDITREE_HSTS
+            {{- if eq .Values.global.issuer "prod" }}
+              value: {{ mul 60 60 24 365 2 | quote }}
+            {{- else }}
+              value: "0"
+            {{- end }}
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              port: 8080
+              path: "/"
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              port: 8080
+              path: "/"
+            failureThreshold: 20
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 200Mi
+            limits:
+              cpu: 200m
+              memory: 200Mi

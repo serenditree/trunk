@@ -1,0 +1,92 @@
+{{- with .Values.kafka }}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: {{ .name }}
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    version: 4.3.1
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+    logging:
+      type: inline
+      loggers:
+        rootLogger.level: WARN
+        logger.kafka.level: WARN
+        logger.orgapachekafka.level: WARN
+        logger.controller.level: WARN
+        logger.logcleaner.level: WARN
+        logger.statechange.level: WARN
+        logger.authorizer.level: WARN
+    jvmOptions:
+      "-Xms": 512M
+      "-Xmx": 512M
+    config:
+      default.replication.factor: {{ .replicationFactor }}
+      log.retention.bytes: {{ mulf (div (mul .storage 1000000000) (mul (len .topics) .partitions .replicationFactor)) 0.8 | int }}
+      log.retention.check.interval.ms: 60000
+      log.retention.hours: {{ .logRetentionHours | int }}
+      num.partitions: {{ .partitions | int }}
+      transaction.state.log.replication.factor: {{ .replicationFactor }}
+      transaction.state.log.min.isr: {{ .replicationFactor }}
+      offsets.topic.replication.factor: {{ .replicationFactor }}
+      compression.type: {{ .compressionType }}
+      fetch.max.bytes: {{ .messageMaxBytes | int }}
+      message.max.bytes: {{ .messageMaxBytes | int }}
+      replica.fetch.max.bytes: {{ .messageMaxBytes | int }}
+      replica.fetch.min.bytes: 1
+      replica.fetch.response.max.bytes: {{ .messageMaxBytes | int }}
+      request.timeout.ms: {{ .requestTimeoutMs | int }}
+      consumer.fetch.max.bytes: {{ .messageMaxBytes | int }}
+      consumer.max.partition.fetch.bytes: {{ .messageMaxBytes | int }}
+      consumer.request.timeout.ms: {{ .requestTimeoutMs | int }}
+      producer.batch.size: {{ mul .messageMaxBytes .messageBatchFactor | int }}
+      producer.buffer.memory: {{ mulf .messageMaxBytes .messageBatchFactor 1.2 | int }}
+      producer.compression.type: {{ .compressionType }}
+      producer.max.request.size: {{ .messageMaxBytes | int }}
+      producer.request.timeout.ms: {{ .requestTimeoutMs | int }}
+    template:
+      pod:
+        metadata:
+          labels:
+            serenditree.io/otel: root-wind
+            app: root-wind
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    app: root-wind
+                topologyKey: kubernetes.io/hostname
+{{/*          nodeAffinity:*/}}
+{{/*            requiredDuringSchedulingIgnoredDuringExecution:*/}}
+{{/*              nodeSelectorTerms:*/}}
+{{/*                - matchExpressions:*/}}
+{{/*                    - key: serenditree.io/node-role*/}}
+{{/*                      operator: In*/}}
+{{/*                      values:*/}}
+{{/*                        - root*/}}
+        tolerations:
+          - key: serenditree.io/node-taint
+            value: "root"
+            operator: Equal
+            effect: NoSchedule
+  entityOperator:
+    topicOperator:
+      logging:
+        type: inline
+        loggers:
+          rootLogger.level: "WARN"
+    userOperator:
+      logging:
+        type: inline
+        loggers:
+          rootLogger.level: "WARN"
+{{- end }}

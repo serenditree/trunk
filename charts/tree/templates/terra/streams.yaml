@@ -1,0 +1,46 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.terraStreams.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.terraStreams.wave | quote }}
+    argocd.argoproj.io/sync-wave: {{ .Values.terraStreams.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{ .Values.global.terraPath }}/{{ trimPrefix .Values.global.terraPrefix .Values.terraStreams.name }}"
+    targetRevision: {{ .Values.terraStreams.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+        - name: global.wait
+          value: {{ .Values.global.wait | quote }}
+        - name: global.wave
+          value: {{ .Values.terraStreams.wave | quote }}
+        - name: global.context
+          value: {{ .Values.global.context }}
+        - name: global.clusterDomain
+          value: {{ .Values.global.clusterDomain }}
+        - name: strimzi-kafka-operator.kubernetesServiceDnsDomain
+          value: {{ .Values.global.clusterDomain }}
+        - name: terraStreams.kafdrop.enabled
+          value: {{ .Values.terraStreams.parameters.kafdrop.enabled | quote }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.terraStreams.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jqPathExpressions:
+        - '.spec.versions[].deprecated'
+        - '.spec.versions[].schema.openAPIV3Schema.properties.status.properties.clusterSecurity.properties'

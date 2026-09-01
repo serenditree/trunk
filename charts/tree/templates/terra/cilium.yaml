@@ -1,0 +1,43 @@
+{{- if .Values.terraCilium.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.terraCilium.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.terraCilium.wave | quote }}
+    argocd.argoproj.io/sync-wave: {{ .Values.terraCilium.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{  .Values.global.terraPath }}/{{ trimPrefix .Values.global.terraPrefix .Values.terraCilium.name }}"
+    targetRevision: {{ .Values.terraCilium.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+        - name: global.zone.storage1
+          value: {{ .Values.global.zone.storage1 }}
+        - name: cilium.cluster.name
+          value: {{ .Values.terraCilium.parameters.cluster.name }}
+        - name: cilium.k8sServiceHost
+          value: {{ .Values.terraCilium.parameters.k8sServiceHost }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.terraCilium.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+      - group: monitoring.coreos.com
+        kind: ServiceMonitor
+        jqPathExpressions:
+          - ".spec.endpoints[].relabelings"
+          - ".spec.endpoints[].metricRelabelings"
+{{- end }}

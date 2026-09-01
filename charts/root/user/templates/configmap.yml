@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.rootUser.init.configMap }}
+  labels:
+    {{- include "st-default-labels-component" . }}
+data:
+  init.sql: |-
+{{ .Files.Get "resources/0.0.1-init.sql" | indent 4 }}

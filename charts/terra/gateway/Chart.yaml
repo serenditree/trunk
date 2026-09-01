@@ -1,0 +1,20 @@
+#file: noinspection HelmChartUnknownValues
+apiVersion: v2
+type: application
+name: terra-gateway
+description: Envoy Gateway resources.
+version: 0.0.1
+appVersion: 0.0.1
+dependencies:
+  - name: gateway-helm
+    repository: oci://docker.io/envoyproxy
+    version: v1.9.1
+    condition: terraGateway.envoy
+  - name: traefik
+    repository: https://traefik.github.io/charts
+    version: 41.5.0
+    condition: terraGateway.traefik
+  - name: commons
+    repository: oci://quay.io/serenditree/charts
+    version: 0.0.1
+    condition: global.wait

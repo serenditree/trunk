@@ -1,0 +1,9 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: root-map
+spec:
+  minAvailable: {{ .Values.rootMap.minReplicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: root-map

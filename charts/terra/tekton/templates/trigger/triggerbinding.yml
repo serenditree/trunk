@@ -1,0 +1,17 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github
+  labels:
+    app.kubernetes.io/component: tekton
+spec:
+  params:
+    - name: repo-name
+      value: $(body.repository.name)
+    - name: repo-url
+      value: $(body.pull_request.head.repo.clone_url)
+    - name: repo-revision
+      value: $(body.pull_request.head.sha)
+    - name: pr-number
+      value: $(body.number)

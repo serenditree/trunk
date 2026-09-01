@@ -1,0 +1,16 @@
+{{- range .Values.kafka.topics }}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: {{ . }}
+{{- with $.Values.kafka }}
+  labels:
+    strimzi.io/cluster: {{ .name }}
+spec:
+  partitions: {{ .partitions }}
+  replicas: {{ .replicationFactor }}
+  config:
+    retention.ms: {{ mul .logRetentionHours 60 60 1000 }}
+{{- end }}
+{{- end }}

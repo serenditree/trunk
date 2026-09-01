@@ -1,0 +1,114 @@
+{{ range without .Values.branch.branches "garden" }}
+{{- $branchName := printf "%s-%s" "branch" . }}
+{{- $branch := . }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $branchName }}
+  annotations:
+    reloader.stakater.com/auto: "true"
+  labels:
+    {{- include "st-default-labels-range" (dict "name" $branchName "context" $) }}
+spec:
+  revisionHistoryLimit: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      name: {{ $branchName }}
+  template:
+    metadata:
+      labels:
+        {{- include "st-default-labels-range" (dict "name" $branchName "context" $) | indent 4 }}
+        name: {{ $branchName }}
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: {{ add1 $.Values.branch.shutdownTimeout }}
+      containers:
+        - name: {{ $branchName }}
+          image: "quay.io/serenditree/{{ $branchName }}:latest"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: branch
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:InitialRAMPercentage=75.0 -XX:MaxRAMPercentage=75.0 -XX:MinRAMPercentage=75.0"
+            - name: SERENDITREE_JWK_SIGNATURE
+              valueFrom:
+                secretKeyRef:
+                  key: jwk-signature
+                  name: branch
+            - name: SERENDITREE_JWK_ENCRYPTION
+              valueFrom:
+                secretKeyRef:
+                  key: jwk-encryption
+                  name: branch
+            - name: SERENDITREE_JWK_SIGNATURE_RETIRING
+              valueFrom:
+                secretKeyRef:
+                  key: jwk-signature-retiring
+                  name: branch
+            - name: SERENDITREE_JWK_ENCRYPTION_RETIRING
+              valueFrom:
+                secretKeyRef:
+                  key: jwk-encryption-retiring
+                  name: branch
+            {{- range $.Values.branch.oidc }}
+            - name: QUARKUS_OIDC_{{ . | upper }}_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: oidc-id-{{ . }}
+                  name: branch
+            - name: QUARKUS_OIDC_{{ . | upper }}_CREDENTIALS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: oidc-secret-{{ . }}
+                  name: branch
+            - name: QUARKUS_OIDC_{{ . | upper }}_AUTH_SERVER_URL
+              valueFrom:
+                secretKeyRef:
+                  key: oidc-url-{{ . }}
+                  name: branch
+            - name: QUARKUS_OIDC_{{ . | upper }}_APPLICATION_TYPE
+              value: web-app
+            {{- end }}
+            - name: SERENDITREE_ROOT_USER_USER
+              valueFrom:
+                secretKeyRef:
+                  key: database-user
+                  name: root-user
+            - name: SERENDITREE_ROOT_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: database-password
+                  name: root-user
+          resources:
+            requests:
+              cpu: 500m
+              memory: 500Mi
+            limits:
+              cpu: 500m
+              memory: 500Mi
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              port: 8080
+              path: "/q/health/ready"
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+{{- end }}

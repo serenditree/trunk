@@ -1,0 +1,26 @@
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: {{ .Values.rootUser.s3.objectStore }}
+  labels:
+    serenditree.io/policy: fence-root-user
+    serenditree.io/otel: root-user-object-store
+spec:
+  configuration:
+    endpointURL: https://serenditree-backup-user.sos-{{ .Values.global.zone.storage1 }}.exo.io
+    destinationPath: s3://cnpg
+    s3Credentials:
+      accessKeyId:
+        key: ACCESS_KEY_ID
+        name: {{ .Values.rootUser.s3.secretRef }}
+      secretAccessKey:
+        key: ACCESS_SECRET_KEY
+        name: {{ .Values.rootUser.s3.secretRef }}
+      region:
+        key: ACCESS_REGION
+        name: {{ .Values.rootUser.s3.secretRef }}
+    wal:
+      compression: gzip
+    data:
+      compression: gzip

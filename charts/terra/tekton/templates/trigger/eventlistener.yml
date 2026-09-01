@@ -1,0 +1,11 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: serenditree
+  labels:
+    app.kubernetes.io/component: tekton
+spec:
+  serviceAccountName: el-serenditree
+  triggers:
+    - triggerRef: github

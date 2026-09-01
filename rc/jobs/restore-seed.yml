@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: root-seed-restore
+spec:
+  template:
+    metadata:
+      labels:
+        serenditree.io/policy: fence-root-seed
+        serenditree.io/job: restore
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: delete-seed
+          image: docker.io/alpine/curl:latest
+          args:
+            - --request
+            - DELETE
+            - 'http://root-seed:9200/seed-*'
+        - name: delete-garden
+          image: docker.io/alpine/curl:latest
+          args:
+            - --request
+            - DELETE
+            - 'http://root-seed:9200/garden-*'
+      containers:
+        - name: seed-restore
+          image: docker.io/alpine/curl:latest
+          args:
+            - --request
+            - POST
+            - 'http://root-seed:9200/_snapshot/seed-backup/$_latest_snapshot/_restore'
+            - --header
+            - 'Content-Type: application/json'
+            - --data
+            - '{"indices": "seed-*,garden-*"}'

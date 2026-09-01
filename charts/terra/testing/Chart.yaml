@@ -1,0 +1,14 @@
+apiVersion: v2
+type: application
+name: terra-testing
+description: K6 testing resources.
+version: 0.0.1
+appVersion: 0.0.1
+dependencies:
+  - name: k6-operator
+    repository: https://grafana.github.io/helm-charts
+    version: 4.6.0
+  - name: commons
+    repository: oci://quay.io/serenditree/charts
+    version: 0.0.1
+    condition: global.wait

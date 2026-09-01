@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: leaf
+  labels:
+    {{- include "st-default-labels" . }}
+spec:
+  type: ClusterIP
+  selector:
+    name: leaf
+  ports:
+    - name: leaf
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

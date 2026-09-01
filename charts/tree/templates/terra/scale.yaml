@@ -1,0 +1,57 @@
+{{- if and .Values.terraScale.enabled (not (hasSuffix "-local" .Values.global.context)) }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.terraScale.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.terraScale.wave | quote }}
+    argocd.argoproj.io/sync-wave: {{ .Values.terraScale.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{ .Values.global.terraPath }}/{{ trimPrefix .Values.global.terraPrefix .Values.terraScale.name }}"
+    targetRevision: {{ .Values.terraScale.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+        - name: global.wait
+          value: {{ .Values.global.wait | quote }}
+        - name: global.wave
+          value: {{ .Values.terraScale.wave | quote }}
+        - name: global.zone.compute1
+          value: {{ .Values.global.zone.compute1 }}
+        - name: terraScale.enabled
+          value: {{ .Values.terraScale.enabled | quote }}
+        - name: terraScale.karpenter
+          value: {{ .Values.terraScale.parameters.karpenter | quote }}
+        - name: terraScale.clusterAutoscaler
+          value: {{ .Values.terraScale.parameters.clusterAutoscaler | quote }}
+        - name: terraScale.securityGroup
+          value: {{ .Values.terraScale.parameters.securityGroup | quote }}
+        - name: terraScale.privateNetwork
+          value: {{ .Values.terraScale.parameters.privateNetwork | quote }}
+        - name: terraScale.antiAffinityGroup
+          value: {{ .Values.terraScale.parameters.antiAffinityGroup | quote }}
+          {{- $index := 0 }}
+          {{- range .Values.terraScale.parameters.autoscalingGroupNames }}
+        - name: cluster-autoscaler.autoscalingGroups[{{ $index }}].name
+          value: {{ . | quote }}
+        - name: cluster-autoscaler.autoscalingGroups[{{ $index }}].minSize
+          value: {{ $.Values.terraScale.parameters.minSize | quote }}
+        - name: cluster-autoscaler.autoscalingGroups[{{ $index }}].maxSize
+          value: {{ $.Values.terraScale.parameters.maxSize | quote }}
+          {{- $index = add1 $index }}
+          {{- end }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.terraScale.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}

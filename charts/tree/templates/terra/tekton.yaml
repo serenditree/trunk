@@ -1,0 +1,46 @@
+{{- if .Values.terraTekton.enabled }}
+{{ $path := printf "%s/%s" .Values.global.terraPath (trimPrefix .Values.global.terraPrefix .Values.terraTekton.name) }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.terraTekton.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.terraTekton.wave | quote }}
+    argocd.argoproj.io/sync-wave: {{ .Values.terraTekton.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: {{ .Values.global.repository | quote }}
+      path: "{{ $path }}/components"
+      targetRevision: {{ .Values.terraTekton.revision | default .Values.global.revision | quote }}
+    - repoURL: {{ .Values.global.repository | quote }}
+      path: "{{ $path }}"
+      targetRevision: {{ .Values.terraTekton.revision | default .Values.global.revision | quote }}
+      helm:
+        parameters:
+          - name: global.wait
+            value: {{ .Values.global.wait | quote }}
+          - name: global.wave
+            value: {{ .Values.terraTekton.wave | quote }}
+          - name: global.context
+            value: {{ .Values.global.context }}
+          - name: global.host
+            value: {{ .Values.global.host }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.terraTekton.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jqPathExpressions:
+        - '.spec.preserveUnknownFields'
+{{- end }}

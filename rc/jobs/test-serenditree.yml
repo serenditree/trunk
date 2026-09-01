@@ -1,0 +1,35 @@
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  generateName: serenditree-test-
+  namespace: terra-testing
+spec:
+  parallelism: 2
+  arguments: --tag testid=serenditree --verbose
+  script:
+    configMap:
+      name: testing
+      file: main.js
+  runner:
+    image: quay.io/serenditree/testing:latest
+    env:
+      - name: K6_PROMETHEUS_RW_SERVER_URL
+        value: 'http://vmsingle-terra-scope.terra-scope.svc.cluster.local:8428/api/v1/write'
+      - name: K6_PROMETHEUS_RW_TREND_STATS
+        value: 'count,sum,min,max,avg,med,p(95),p(99)'
+      - name: K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM
+        value: 'false'
+      - name: K6_OUT
+        value: 'experimental-prometheus-rw'
+      - name: K6_SUMMARY_MODE
+        value: 'full'
+      - name: K6_NO_TEARDOWN
+        value: 'false'
+      - name: BRANCH_USER
+        value: 'branch-user.serenditree.svc.cluster.local:8080'
+      - name: BRANCH_SEED
+        value: 'branch-seed.serenditree.svc.cluster.local:8080'
+      - name: BRANCH_POLL
+        value: 'branch-poll.serenditree.svc.cluster.local:8080'
+      - name: ROOT_MAP
+        value: 'root-map.serenditree.svc.cluster.local:8080'

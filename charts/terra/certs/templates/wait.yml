@@ -1,0 +1,3 @@
+{{- if .Values.global.wait }}
+{{- include "st-wait" . -}}
+{{- end }}

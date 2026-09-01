@@ -1,0 +1,14 @@
+apiVersion: v2
+type: application
+name: terra-collect
+description: OpenTelemetry resources.
+version: 0.0.1
+appVersion: 0.0.1
+dependencies:
+  - name: opentelemetry-collector
+    repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+    version: 0.173.0
+  - name: commons
+    repository: oci://quay.io/serenditree/charts
+    version: 0.0.1
+    condition: global.wait

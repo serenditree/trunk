@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-rotation
+  namespace: terra-vault
+data:
+  rotate.sh: |
+{{ .Files.Get "resources/rotate.sh" | indent 4 }}

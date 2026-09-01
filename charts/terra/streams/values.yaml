@@ -1,0 +1,25 @@
+global:
+  context: ~
+  clusterDomain: ~
+  wait: ~
+  wave: ~
+terraStreams:
+  kafdrop:
+    enabled: false
+strimzi-kafka-operator:
+  resources:
+    requests:
+      memory: 400Mi
+      cpu: 200m
+    limits:
+      memory: 400Mi
+      cpu: 400m
+  kubernetesServiceDnsDomain: ~
+  watchNamespaces:
+    - serenditree
+  livenessProbe:
+    initialDelaySeconds: 60
+  readinessProbe:
+    initialDelaySeconds: 60
+  dashboards:
+    enabled: true

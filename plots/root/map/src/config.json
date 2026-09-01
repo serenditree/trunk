@@ -1,0 +1,23 @@
+{
+  "options": {
+    "paths": {
+      "fonts": "/serenditree/fonts",
+      "styles": "/serenditree/styles",
+      "mbtiles": "/serenditree/data"
+    },
+    "domains": [],
+    "frontPage": false,
+    "serveAllFonts": true
+  },
+  "styles": {
+    "positron": {
+      "style": "positron/style-local.json",
+      "serve_data": true
+    }
+  },
+  "data": {
+    "v3": {
+      "mbtiles": "osm.mbtiles"
+    }
+  }
+}

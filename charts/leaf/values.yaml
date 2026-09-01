@@ -1,0 +1,14 @@
+global:
+  context: ~
+  host: ~
+  gateway: ~
+  issuer: ~
+  stage: ~
+  wait: ~
+  wave: ~
+leaf:
+  rateLimit: true
+  minReplicas: 1
+  maxReplicas: 3
+  otlp:
+    host: ~

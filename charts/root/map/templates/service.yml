@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: root-map
+  labels:
+    {{- include "st-default-labels-component" . }}
+spec:
+  clusterIP: None
+  selector:
+    name: root-map
+  ports:
+    - name: root-map
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

@@ -1,0 +1,42 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: serenditree-revert
+  labels:
+    app.kubernetes.io/component: tekton
+spec:
+  description: 'Task for reverting Quay images and ArgoCD apps.'
+  params:
+    - name: app
+      description: 'Quay repository- and ArgoCD application name.'
+      type: string
+    - name: kind
+      description: 'Kind of the resource to revert.'
+      type: string
+    - name: tag
+      description: 'Tag of the quay image to revert.'
+      type: string
+      default: 'latest'
+    - name: action
+      description: 'Action to perform on the resource.'
+      type: string
+      default: 'deploy'
+  steps:
+    - name: revert-quay
+      image: quay.io/serenditree/buildah:latest
+      env:
+        - name: QUAY_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: quay-token-oauth
+              key: token
+      script: |
+{{ .Files.Get "resources/revert.sh" | indent 8 }}
+    - name: revert-argocd
+      image: docker.io/argoproj/argocd:latest
+      envFrom:
+        - secretRef:
+            name: argocd-token
+      script: |
+{{ .Files.Get "resources/argocd.sh" | indent 8 }}

@@ -1,0 +1,151 @@
+version: '3'
+services:
+  leaf:
+    image: localhost/serenditree/leaf:latest-compose
+    hostname: leaf
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SERENDITREE_STAGE=compose
+      - OTEL_ENABLED=off
+    healthcheck:
+      test: curl localhost:8080
+
+  branch-user:
+    image: localhost/serenditree/branch-user:latest
+    hostname: branch-user
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    env_file:
+      - ../../plots/branch/plot.env
+    environment:
+      - SERENDITREE_STAGE=compose
+      - SERENDITREE_LOG_LEVEL=DEBUG
+    healthcheck:
+      test: curl localhost:8080/q/health/ready
+    depends_on:
+      - root-user
+      - root-wind
+
+  branch-seed:
+    image: localhost/serenditree/branch-seed:latest
+    hostname: branch-seed
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    env_file:
+      - ../../plots/branch/plot.env
+    environment:
+      - SERENDITREE_STAGE=compose
+      - SERENDITREE_LOG_LEVEL=DEBUG
+    healthcheck:
+      test: curl localhost:8080/q/health/ready
+    depends_on:
+      - root-seed
+      - root-wind
+
+  branch-poll:
+    image: localhost/serenditree/branch-poll:latest
+    hostname: branch-poll
+    restart: unless-stopped
+    ports:
+      - "8083:8080"
+    env_file:
+      - ../../plots/branch/plot.env
+    environment:
+      - SERENDITREE_STAGE=compose
+      - SERENDITREE_LOG_LEVEL=DEBUG
+    healthcheck:
+      test: curl localhost:8080/q/health/ready
+    depends_on:
+      - root-user
+      - root-wind
+
+  root-map:
+    image: localhost/serenditree/root-map:latest
+    hostname: root-map
+    restart: unless-stopped
+    ports:
+      - "8084:8081"
+    volumes:
+      - ${_ST_HOME_TRUNK}/plots/root/map/data/tiles:/serenditree/data:Z
+    healthcheck:
+      test: curl localhost:8081/index.json
+
+  root-user:
+    image: localhost/serenditree/root-user:latest
+    hostname: root-user
+    restart: unless-stopped
+    ports:
+      - "8085:5432"
+    environment:
+      - POSTGRES_PASSWORD=root
+    volumes:
+      - root-user:/var/lib/postgresql
+    healthcheck:
+      test: pg_isready -U user -d serenditree -h 127.0.0.1 -p 5432
+
+  root-seed:
+    image: localhost/serenditree/root-seed:latest
+    hostname: root-seed
+    restart: unless-stopped
+    ports:
+      - "8086:9200"
+    env_file:
+      - ../../plots/root/seed/plot.env
+    volumes:
+      - root-seed:/usr/share/opensearch/data
+    healthcheck:
+      test: curl http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=1s
+    ulimits:
+      memlock: -1
+      nproc: ${NPROC}
+      nofile: ${NOFILE}
+
+  root-seed-dash:
+    image: ${_ST_FROM_ROOT_SEED_DASH}
+    hostname: dashboards
+    restart: unless-stopped
+    ports:
+      - "5601:5601"
+    environment:
+      - OPENSEARCH_HOSTS=["http://root-seed:9200"]
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    labels:
+      - serenditree.io/service=root-seed-dash
+    healthcheck:
+      test: curl http://localhost:5601/api/status
+    depends_on:
+      - root-seed
+
+  root-wind:
+    image: localhost/serenditree/root-wind:latest
+    hostname: root-wind
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_HOST=root-wind
+    healthcheck:
+      test: bash health.sh
+
+  root-wind-dash:
+    image: ${_ST_FROM_ROOT_WIND_DASH}
+    restart: unless-stopped
+    hostname: kafdrop
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: root-wind:9092
+    labels:
+      - serenditree.io/service=root-wind-dash
+    healthcheck:
+      test: curl http://localhost:9000/actuator/health
+    depends_on:
+      - root-wind
+volumes:
+  root-user:
+  root-seed:
+  root-wind:

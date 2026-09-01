@@ -1,0 +1,169 @@
+{{- $kind := "Deployment" }}
+{{- range .Values.terraTekton.pipelines.serenditree }}
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: {{ . }}
+  labels:
+    app.kubernetes.io/component: tekton
+spec:
+  params:
+    - name: config
+      type: string
+      description: 'Name of the Job and the ConfigMap to use. Use tekton-serenditree-debug for debugging.'
+      default: tekton-serenditree
+    - name: image
+      type: string
+      description: 'Reference of the image buildah will produce.'
+      default: {{ . }}
+    - name: repo-url
+      type: string
+      description: 'The git repository URL to clone from.'
+      default: https://github.com/serenditree/{{ . }}.git
+    - name: repo-revision
+      type: string
+      description: 'The git revision/branch to clone.'
+      default: dev
+  workspaces:
+    - name: pipeline
+  tasks:
+    ####################################################################################################################
+    # FETCH-SC
+    ####################################################################################################################
+    - name: fetch-sc
+      taskRef:
+        name: serenditree-git
+      params:
+        - name: url
+          value: https://github.com/serenditree/trunk.git
+        - name: subdirectory
+          value: sc
+      workspaces:
+        - name: git
+          workspace: pipeline
+    ####################################################################################################################
+    # FETCH-SRC
+    ####################################################################################################################
+    - name: fetch-src
+      runAfter:
+        - fetch-sc
+      taskRef:
+        name: serenditree-git
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.repo-revision)
+        - name: subdirectory
+          value: src
+      workspaces:
+        - name: git
+          workspace: pipeline
+    ####################################################################################################################
+    # BUILD
+    ####################################################################################################################
+    - name: build
+      runAfter:
+        - fetch-src
+      taskRef:
+        name: serenditree-builder
+      params:
+        - name: config
+          value: $(params.config)
+        - name: image
+          value: $(params.image)
+      workspaces:
+        - name: buildah
+          workspace: pipeline
+    ####################################################################################################################
+    # DEPLOY
+    ####################################################################################################################
+    - name: deploy
+      runAfter:
+        - build
+      taskRef:
+        name: serenditree-argocd
+      retries: 1
+      params:
+        - name: app
+          value: {{ . }}
+        - name: kind
+          value: {{ $kind }}
+        - name: action
+          value: deploy
+    ####################################################################################################################
+    # FINALLY
+    ####################################################################################################################
+  finally:
+    - name: finally-succeeded
+      when:
+        - input: $(tasks.status)
+          operator: in
+          values:
+            - 'Succeeded'
+      taskRef:
+        name: serenditree-notify
+      params:
+        - name: pipeline
+          value: $(context.pipeline.name)
+        - name: run
+          value: $(context.pipelineRun.name)
+        - name: start
+          value: $(tasks.fetch-sc.results.start)
+        - name: git-sha
+          value: $(tasks.fetch-src.results.sha)
+        - name: image-sha
+          value: $(tasks.build.results.sha)
+        - name: status
+          value: $(tasks.status)
+        - name: details
+          value:
+            - '$(tasks.fetch-sc.status):fetch-sc'
+            - '$(tasks.fetch-src.status):fetch-src'
+            - '$(tasks.build.status):build'
+            - '$(tasks.deploy.status):deploy'
+    - name: finally-revert
+      when:
+        - input: $(tasks.build.status)
+          operator: in
+          values:
+            - 'Succeeded'
+        - input: $(tasks.deploy.status)
+          operator: in
+          values:
+            - 'Failed'
+      taskRef:
+        name: serenditree-revert
+      params:
+        - name: app
+          value: $(context.pipeline.name)
+        - name: kind
+          value: {{ $kind }}
+    - name: finally-failed
+      when:
+        - input: $(tasks.status)
+          operator: in
+          values:
+            - 'Failed'
+            - 'Cancelled'
+            - 'Completed'
+            - 'PipelineRunTimeout'
+            - 'CreateRunFailed'
+            - 'None'
+      taskRef:
+        name: serenditree-notify
+      params:
+        - name: pipeline
+          value: $(context.pipeline.name)
+        - name: run
+          value: $(context.pipelineRun.name)
+        - name: status
+          value: $(tasks.status)
+        - name: details
+          value:
+            - '$(tasks.fetch-sc.status):fetch-sc'
+            - '$(tasks.fetch-src.status):fetch-src'
+            - '$(tasks.build.status):build'
+            - '$(tasks.deploy.status):deploy'
+{{- end }}

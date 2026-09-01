@@ -1,0 +1,18 @@
+{{- if .Values.terraGateway.traefik -}}
+{{- range .Values.terraGateway.rateLimits }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .name }}-ratelimit
+  namespace: serenditree
+spec:
+  rateLimit:
+    average: {{ .average }}
+    burst: {{ .burst }}
+    period: {{ .period }}
+    redis:
+      endpoints:
+        - {{ $.Values.terraGateway.cacheHost }}
+{{- end }}
+{{- end }}

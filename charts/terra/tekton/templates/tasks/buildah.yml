@@ -1,0 +1,80 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: serenditree-builder
+  labels:
+    app.kubernetes.io/component: tekton
+spec:
+  description: 'Task for building and pushing container images.'
+  params:
+    - name: config
+      type: string
+      description: 'Name of the configuration to use.'
+    - name: image
+      type: string
+      description: 'Reference of the image buildah will produce.'
+    - name: builder-image
+      type: string
+      default: quay.io/serenditree/buildah:latest
+      description: 'The location of the buildah builder image.'
+  results:
+    - name: sha
+      description: 'Image digest of the created container image.'
+  workspaces:
+    - name: buildah
+  stepTemplate:
+    envFrom:
+      - configMapRef:
+          name: $(params.config)
+    env:
+      - name: _ST_MVN
+        value: $(workspaces.buildah.path)/.repo
+      - name: _ST_CACHE
+        value: $(workspaces.buildah.path)/.cache
+    securityContext:
+      privileged: true
+    volumeMounts:
+      - name: containers
+        mountPath: /var/lib/containers
+  steps:
+    - name: env
+      image: $(params.builder-image)
+      workingDir: $(workspaces.buildah.path)
+      script: |
+        env | grep _ST_ | sort
+        mkdir -pv $_ST_MVN $_ST_CACHE
+    - name: build
+      image: $(params.builder-image)
+      workingDir: $(workspaces.buildah.path)
+      computeResources:
+        requests:
+          memory: 4Gi
+        limits:
+          memory: 4Gi
+      command:
+        - sc/cli.sh
+      args:
+        - build
+        - $(params.image)
+    - name: push
+      image: $(params.builder-image)
+      workingDir: $(workspaces.buildah.path)
+      env:
+        - name: _ST_BUILD_RESULTS_PATH
+          value: $(results.sha.path)
+      command:
+        - sc/cli.sh
+      args:
+        - push
+        - $(params.image)
+    - name: prune
+      image: $(params.builder-image)
+      workingDir: $(workspaces.buildah.path)
+      script: |
+        buildah rmi --prune || true
+        du -sh /var/lib/containers
+  volumes:
+    - name: containers
+      persistentVolumeClaim:
+        claimName: tekton-containers

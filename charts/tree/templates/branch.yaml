@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.branch.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.branch.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.global.repository | quote }}
+    path: "{{ .Values.global.path }}/{{ .Values.branch.name }}"
+    targetRevision: {{ .Values.branch.revision | default .Values.global.revision | quote }}
+    helm:
+      parameters:
+        - name: global.wait
+          value: {{ .Values.global.wait | quote }}
+        - name: global.wave
+          value: {{ .Values.branch.wave | quote }}
+        - name: global.context
+          value: {{ .Values.global.context }}
+        - name: global.stage
+          value: {{ .Values.global.stage }}
+        - name: global.issuer
+          value: {{ .Values.global.issuer }}
+        - name: global.host
+          value: {{ .Values.global.host }}
+        - name: global.gateway
+          value: {{ .Values.global.gateway | quote }}
+        - name: branch.logLevel
+          value: {{ .Values.branch.parameters.logLevel }}
+        - name: branch.otlp.endpoint
+          value: "http://collect.{{ .Values.terraCollect.namespace }}.svc.{{ .Values.global.clusterDomain }}:4317"
+        {{- $index := 0 }}
+        {{- range .Values.branch.parameters.oidc }}
+        - name: branch.oidc[{{ $index }}]
+          value: {{ . }}
+          {{- $index = add1 $index }}
+        {{- end }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.branch.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true

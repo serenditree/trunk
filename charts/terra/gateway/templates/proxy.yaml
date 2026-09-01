@@ -1,0 +1,62 @@
+{{ if .Values.terraGateway.envoy }}
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: {{ .Values.terraGateway.proxyName }}
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        container:
+          resources:
+            requests:
+              cpu: 200m
+              memory: 500Mi
+            limits:
+              cpu: 800m
+              memory: 1Gi
+      envoyHpa:
+        minReplicas: 3
+        maxReplicas: 6
+        metrics:
+          - resource:
+              name: cpu
+              target:
+                averageUtilization: 75
+                type: Utilization
+            type: Resource
+      envoyService:
+        annotations:
+          service.beta.kubernetes.io/exoscale-loadbalancer-service-strategy: 'round-robin'
+          service.beta.kubernetes.io/exoscale-loadbalancer-external: 'true'
+          service.beta.kubernetes.io/exoscale-loadbalancer-id: {{ .Values.terraGateway.loadBalancerID }}
+  telemetry:
+    tracing:
+      samplingRate: 100
+      provider:
+        backendRefs:
+          - group: ''
+            kind: Service
+            name: collect
+            namespace: terra-collect
+            port: 4317
+            weight: 1
+        type: OpenTelemetry
+      customTags:
+        provider:
+          type: Literal
+          literal:
+            value: 'otel-collector'
+        "k8s.pod.name":
+          type: Environment
+          environment:
+            name: ENVOY_POD_NAME
+            defaultValue: 'envoy'
+        "k8s.namespace.name":
+          type: Environment
+          environment:
+            name: ENVOY_GATEWAY_NAMESPACE
+            defaultValue: 'terra-gateway'
+{{ end }}

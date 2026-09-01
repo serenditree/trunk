@@ -1,0 +1,43 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: github
+  labels:
+    app.kubernetes.io/component: tekton
+spec:
+  params:
+    - name: repo-name
+      description: 'The git repository name to clone from.'
+    - name: repo-url
+      description: 'The git repository URL to clone from.'
+    - name: repo-revision
+      description: 'The git revision/branch to clone.'
+    - name: pr-number
+      description: 'Number of the pull request that triggered the run.'
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: $(tt.params.repo-name)-pr-$(tt.params.pr-number)-
+        labels:
+          app.kubernetes.io/component: tekton
+          serenditree.io/pr: $(tt.params.repo-name)-$(tt.params.pr-number)
+      spec:
+        pipelineRef:
+          name: $(tt.params.repo-name)
+        taskRunTemplate:
+          serviceAccountName: pipelines
+        params:
+          - name: config
+            value: tekton-serenditree
+          - name: image
+            value: $(tt.params.repo-name)
+          - name: repo-url
+            value: $(tt.params.repo-url)
+          - name: repo-revision
+            value: $(tt.params.repo-revision)
+        workspaces:
+          - name: pipeline
+            persistentVolumeClaim:
+              claimName: tekton-$(tt.params.repo-name)-workspace

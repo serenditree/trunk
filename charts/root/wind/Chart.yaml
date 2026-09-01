@@ -1,0 +1,10 @@
+apiVersion: v2
+type: application
+name: root-wind
+description: Kafka resources.
+version: 0.0.1
+appVersion: 0.0.1
+dependencies:
+  - name: commons
+    repository: oci://quay.io/serenditree/charts
+    version: 0.0.1

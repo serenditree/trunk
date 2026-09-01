@@ -1,0 +1,3 @@
+# Needed for rpm >= 6
+# Private rpm macros for host-side "dnf --installroot" builds (see _ST_DNF_HOST in src/env.sh).
+%__systemd_sysusers %{nil}

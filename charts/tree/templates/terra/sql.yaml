@@ -1,0 +1,46 @@
+{{- if not (hasSuffix "-local" .Values.global.context) }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.terraSQL.name }}
+  namespace: {{ .Values.global.argocdNamespace }}
+  annotations:
+    serenditree.io/wave: {{ .Values.terraSQL.wave | quote }}
+    argocd.argoproj.io/sync-wave: {{ .Values.terraSQL.wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: {{ .Values.terraSQL.parameters.plugins.barman.repoUrl }}
+      targetRevision: {{ .Values.terraSQL.parameters.plugins.barman.targetRevision }}
+      path: kubernetes
+      kustomize:
+        namespace: {{ .Values.terraSQL.namespace }}
+        patches:
+          - patch: |-
+              - op: replace
+                path: /subjects/0/namespace
+                value: {{ .Values.terraSQL.namespace }}
+            target:
+              kind: (ClusterRoleBinding|RoleBinding)
+    - repoURL: {{ .Values.global.repository | quote }}
+      path: "{{ .Values.global.terraPath }}/{{ trimPrefix .Values.global.terraPrefix .Values.terraSQL.name }}"
+      targetRevision: {{ .Values.terraSQL.revision | default .Values.global.revision | quote }}
+      helm:
+        parameters:
+          - name: global.wait
+            value: {{ .Values.global.wait | quote }}
+          - name: global.wave
+            value: {{ .Values.terraSQL.wave | quote }}
+  destination:
+    server: {{ .Values.global.destinationServer }}
+    namespace: {{ .Values.terraSQL.namespace }}
+  syncPolicy:
+    automated: {{ .Values.global.automated | toYaml | nindent 6 }}
+    retry: {{ .Values.global.retry | toYaml | nindent 6  }}
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+{{- end }}

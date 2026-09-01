@@ -1,0 +1,28 @@
+{{- with .Values.kafka }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+spec:
+  type: ClusterIP
+  selector:
+    strimzi.io/broker-role: 'true'
+    strimzi.io/kind: Kafka
+    strimzi.io/cluster: {{ .name }}
+    strimzi.io/name: {{ .name }}-kafka
+  ports:
+    - name: tcp-replication
+      port: 9091
+      protocol: TCP
+      targetPort: 9091
+    - name: tcp-clients
+      port: 9092
+      protocol: TCP
+      targetPort: 9092
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
+  sessionAffinity: None
+{{- end }}

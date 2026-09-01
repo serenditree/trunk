@@ -1,0 +1,119 @@
+global:
+  context: ~
+  host: ~
+  issuer: ~
+  wait: ~
+  wave: ~
+terraGateway:
+  traefik: true
+  envoy: false
+  name: serenditree
+  proxyName: serenditree-proxy
+  loadBalancerID: ~
+  cacheHost: ~
+  rateLimits:
+    - name: leaf
+      average: 10
+      burst: 10
+      period: 1s
+    - name: branch-global
+      average: 10
+      burst: 10
+      period: 1s
+    - name: branch-sign-up
+      average: 1
+      burst: 2
+      period: 86400s
+    - name: root-map
+      average: 20
+      burst: 20
+      period: 1s
+########################################################################################################################
+# Traefik configuration
+########################################################################################################################
+traefik:
+  providers:
+    kubernetesIngress:
+      enabled: false
+    kubernetesGateway:
+      enabled: true
+    kubernetesCRD:
+      enabled: true
+  gateway:
+    enabled: false
+  gatewayClass:
+    enabled: false
+  ingressClass:
+    enabled: false
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 6
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      memory: 200Mi
+  api:
+    dashboard: true
+  ports:
+    web:
+      port: 80
+      exposedPort: 80
+      protocol: TCP
+    websecure:
+      port: 443
+      exposedPort: 443
+      protocol: TCP
+  service:
+    annotations:
+      service.beta.kubernetes.io/exoscale-loadbalancer-service-strategy: 'round-robin'
+      service.beta.kubernetes.io/exoscale-loadbalancer-external: 'true'
+      service.beta.kubernetes.io/exoscale-loadbalancer-id: ~
+  tracing:
+    sampleRate: 1
+    otlp:
+      enabled: true
+      grpc:
+        enabled: true
+        insecure: true
+        endpoint: ~
+########################################################################################################################
+# Envoy configuration
+########################################################################################################################
+gateway-helm:
+  deployment:
+    envoyGateway:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 500Mi
+        limits:
+          memory: 1Gi
+    pod:
+      labels:
+        serenditree.io/otel: gateway
+  crds:
+    enabled: false
+  podDisruptionBudget:
+    maxUnavailable: 1
+  config:
+    envoyGateway:
+      provider:
+        type: Kubernetes
+        kubernetes:
+          rateLimitDeployment:
+            replicas: 1
+            container:
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 500Mi
+                limits:
+                  memory: 1Gi
+      rateLimit:
+        backend:
+          type: Redis
+          redis:
+            url: ~

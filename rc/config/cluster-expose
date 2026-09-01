@@ -1,0 +1,6 @@
+argocd;terra-argocd;terra-argocd-server;9098:443
+tekton;tekton-pipelines;tekton-dashboard;9095:9097
+grafana;terra-scope;terra-scope-grafana;9097:80
+hubble;kube-system;hubble-ui;9096:80
+kafdrop;terra-streams;kafdrop;9000:9000
+victoria;terra-scope;vmsingle-terra-scope;9099:8428

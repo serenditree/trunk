@@ -1,0 +1,10 @@
+apiVersion: v2
+type: application
+name: terra-argocd
+description: ArgoCD resources.
+version: 0.0.1
+appVersion: 0.0.1
+dependencies:
+  - name: argo-cd
+    repository: https://argoproj.github.io/argo-helm
+    version: 10.9.0
