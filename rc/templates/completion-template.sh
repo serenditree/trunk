@@ -45,6 +45,10 @@ function _sc_completion() {
     tekton|branch|leaf)
         COMPREPLY=($(compgen -W "branch leaf" -- "$_current"))
         ;;
+    update)
+        local _update="crds helm img kafka kubernetes kustomize mvn nginx tiles tileserver tools yarn"
+        COMPREPLY=($(compgen -W "$_update"  -- "$_current"))
+        ;;
     --scale)
         COMPREPLY=($(compgen -W "karpenter karpenter-only autoscaler" -- "$_current"))
         ;;

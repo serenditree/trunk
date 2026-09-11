@@ -355,6 +355,71 @@ function sc_update_yarn() {
     popd &>/dev/null || exit 1
 }
 
+# Uploads tiles.
+# $1: mbtiles file.
+function sc_upload_tiles() {
+    local -r _tiles="$1"
+    local -r _bucket=serenditree-data
+
+    export AWS_PROFILE=serenditree
+    export AWS_REGION=$_ST_ZONE_STORAGE_1
+    export AWS_ENDPOINT_URL="https://sos-${AWS_REGION}.exo.io"
+
+    if ! aws s3api head-bucket --bucket $_bucket &>/dev/null; then
+        aws s3 mb s3://$_bucket
+
+        aws s3api put-bucket-acl \
+          --bucket $_bucket \
+          --acl private
+    fi
+
+    aws s3 cp "$_tiles" "s3://${_bucket}/${_tiles##*/}" --acl bucket-owner-read
+}
+
+# Updates tiles.
+function sc_update_tiles() {
+    local -r _tiles_urls=/tmp/mbtiles
+    local -r _tiles_dir=./mbtiles
+    local -r _tiles_dir_repo="${_ST_HOME_TRUNK}/plots/root/map/data/tiles"
+    local -r _tiles=osm.mbtiles
+
+    if [[ ! -f $_tiles_urls ]]; then
+        local _dl="https://data.maptiler.com/my-extracts/?dataset=osm&division=europe"
+        _dl="$(echo $_dl/{austria,germany,switzerland})"
+
+        echo "The file $_tiles_urls containing the URLs to download does not exist. Aborting..."
+        echo -e "\nDownload at:\n$(tr ' ' '\n' <<<"$_dl")\n\nStore at:\n$_tiles_urls"
+        exit 1
+    fi
+
+    sc_heading 2 "Installing build-dependencies..."
+    sudo dnf install -y gcc-c++ libsq3-devel zlib-devel
+
+    sc_heading 2 "Cloning tippecanoe..."
+    pushd /tmp || exit 1
+    rm -rf tippecanoe
+    git clone https://github.com/mapbox/tippecanoe.git
+
+    sc_heading 2 "Building tippecanoe..."
+    pushd tippecanoe || exit 1
+    make -j
+
+    sc_heading 2 "Downloading tiles..."
+    mkdir $_tiles_dir
+    while read -r _mbtiles_url; do
+        wget -c -P $_tiles_dir "$_mbtiles_url"
+    done <$_tiles_urls
+
+    sc_heading 2 "Joining tiles..."
+    ./tile-join -f -pk -pg -o "${_tiles_dir}/${_tiles}" ${_tiles_dir}/*
+
+    mkdir -pv "$_tiles_dir_repo"
+    mv -fv "${_tiles_dir}/${_tiles}" "$_tiles_dir_repo"
+
+    sc_heading 2 "Uploading tiles..."
+    sc_upload_tiles "${_tiles_dir_repo}/${_tiles}"
+}
+
 # Subroutine for sc_update_tools.
 function sc_update_tools_sub() {
     local _latest=$1
@@ -447,7 +512,7 @@ function sc_update() {
     kustomize)
         sc_update_kustomize
         ;;
-    tile*)
+    tileserver)
         sc_update_tileserver
         ;;
     kafka)
@@ -456,14 +521,17 @@ function sc_update() {
     nginx)
         sc_update_nginx
         ;;
-    img | image*)
+    img)
         sc_update_image "$(sc_args_to_pattern "${_ARG_LEFTOVERS[*]:1}")"
         ;;
-    maven | mvn | java)
+    mvn)
         sc_update_maven
         ;;
     yarn)
         sc_update_yarn
+        ;;
+    tiles)
+        sc_update_tiles
         ;;
     tools)
         sc_update_tools "${_ARG_LEFTOVERS[*]:1}"
@@ -490,6 +558,8 @@ function sc_update() {
         sc_heading 1 yarn
         sc_update_yarn
         if [[ -n "$_ARG_ALL" ]]; then
+            sc_heading 1 tiles
+            sc_update_tiles
             sc_heading 1 tools
             sc_update_tools
         fi
