@@ -6,7 +6,7 @@ appVersion: 0.0.1
 dependencies:
   - name: openbao
     repository: https://openbao.github.io/openbao-helm
-    version: 0.29.4
+    version: 0.29.5
   - name: external-secrets
     repository: https://charts.external-secrets.io
     version: 2.10.0
