@@ -373,7 +373,7 @@ function sc_upload_tiles() {
           --acl private
     fi
 
-    aws s3 cp "$_tiles" "s3://${_bucket}/${_tiles##*/}" --acl bucket-owner-read
+    aws s3 cp "$_tiles" "s3://${_bucket}/${_tiles##*/data/}" --acl bucket-owner-read
 }
 
 # Updates tiles.

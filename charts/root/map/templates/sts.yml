@@ -39,7 +39,7 @@ spec:
             - name: S3_REGION
               value: {{ .Values.global.zone.storage1 }}
             - name: MBTILES_SOS
-              value: data/osm.mbtiles
+              value: tiles/osm.mbtiles
             - name: MBTILES_DIR
               value: {{ .Values.rootMap.dataMountPath }}
             - name: MBTILES
