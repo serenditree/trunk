@@ -174,7 +174,7 @@ function sc_terra_up_wait() {
                         echo -n " Refreshing app(s)" &&
                         _refresh_echo="done"
                     argocd app get --hard-refresh "$_app" &>> $_tmp &&
-                        argocd app sync --replace --async "$_app" &>> $_tmp &&
+                        argocd app sync --async "$_app" &>> $_tmp &&
                         _refresh_done=$_iteration
                 done < <(sed -En "s/^(\S+).* $_refresh .*/\1/p" <<<"$_state")
             fi
