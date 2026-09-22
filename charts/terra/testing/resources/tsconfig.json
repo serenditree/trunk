@@ -3,8 +3,7 @@
     "target": "ES6",
     "module": "ES6",
     "paths": {
-      "https://jslib.k6.io/httpx/0.1.0/index.js": ["./types/xk6-httpx/index.js"],
-      "k6/x/faker": ["./types/xk6-faker/index.d.ts"]
+      "k6/x/faker": ["./types/k6-faker/index.d.ts"]
     }
   }
 }

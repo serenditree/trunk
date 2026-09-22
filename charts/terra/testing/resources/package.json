@@ -4,6 +4,6 @@
   "license": "",
   "private": true,
   "devDependencies": {
-    "@types/k6": "^2.0.0"
+    "@types/k6": "^2.2.1"
   }
 }

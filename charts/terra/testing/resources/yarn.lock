@@ -3,6 +3,6 @@
 
 
 "@types/k6@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@types/k6/-/k6-2.0.0.tgz#193522b7716812a1b2037ee55b2457cbc8a55108"
-  integrity sha512-ztO2fVOAQxtCpF6VWTn8O6FW6Z4DpjhY+XvD2GpCe/+fAfekD45bQ+vrM0B0C0c5ajLpVgWTMlLu9dKZ1nI+wg==
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@types/k6/-/k6-2.2.1.tgz#0c394eb3e15bccfb94866fbf28f8a45a955a0e24"
+  integrity sha512-WgLxx6KgNSZq3KV3HnYYVvo5ZZSxyRz3q9B0byBAY8z6HuYWxcdOr69fRQuvadmUD2NkVVcbDMye8mF+2Wxx/A==
