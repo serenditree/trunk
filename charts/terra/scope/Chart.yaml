@@ -7,7 +7,7 @@ appVersion: 0.0.1
 dependencies:
   - name: victoria-metrics-k8s-stack
     repository: https://victoriametrics.github.io/helm-charts
-    version: 0.92.1
+    version: 0.93.0
   - name: prometheus-operator-crds
     repository: https://prometheus-community.github.io/helm-charts
     version: 32.0.0
