@@ -356,7 +356,7 @@ function sc_update_yarn() {
 }
 
 # Uploads tiles.
-# $1: mbtiles file.
+# $1: MBTiles file.
 function sc_upload_tiles() {
     local -r _tiles="$1"
     local -r _bucket=serenditree-data
@@ -376,12 +376,28 @@ function sc_upload_tiles() {
     aws s3 cp "$_tiles" "s3://${_bucket}/${_tiles##*/data/}" --acl bucket-owner-read
 }
 
-# Updates tiles.
-function sc_update_tiles() {
+# Updates tiles using Planetiler.
+function sc_update_tiles_planetiler() {
+    local -r _tiles_dir=$1
+    local -r _tiles=$2
+
+    sc_heading 2 "Downloading and converting tiles..."
+    rm -rf "$_tiles_dir"
+    mkdir "$_tiles_dir"
+    podman run \
+        --rm \
+        --name planetiler \
+        --pull always \
+        --volume "$(pwd)/$_tiles_dir":/data:Z \
+        --env JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=50.0" \
+        ghcr.io/onthegomap/planetiler:latest --download --area=dach --output="/data/${_tiles}"
+}
+
+# Updates tiles using MapTiler.
+function sc_update_tiles_maptiler() {
     local -r _tiles_urls=/tmp/mbtiles
-    local -r _tiles_dir=./mbtiles
-    local -r _tiles_dir_repo="${_ST_HOME_TRUNK}/plots/root/map/data/tiles"
-    local -r _tiles=osm.mbtiles
+    local -r _tiles_dir=$1
+    local -r _tiles=$2
 
     if [[ ! -f $_tiles_urls ]]; then
         local _dl="https://data.maptiler.com/my-extracts/?dataset=osm&division=europe"
@@ -396,7 +412,6 @@ function sc_update_tiles() {
     sudo dnf install -y gcc-c++ libsq3-devel zlib-devel
 
     sc_heading 2 "Cloning tippecanoe..."
-    pushd /tmp || exit 1
     rm -rf tippecanoe
     git clone https://github.com/mapbox/tippecanoe.git
 
@@ -412,9 +427,33 @@ function sc_update_tiles() {
 
     sc_heading 2 "Joining tiles..."
     ./tile-join -f -pk -pg -o "${_tiles_dir}/${_tiles}" ${_tiles_dir}/*
+}
 
+# Updates tiles.
+function sc_update_tiles() {
+    local -r _tiles_dir=mbtiles
+    local -r _tiles_dir_repo="${_ST_HOME_TRUNK}/plots/root/map/data/tiles"
+    local -r _tiles=osm.mbtiles
+
+    case ${_ST_MAP_DATA} in
+        planetiler)
+            pushd ~/Downloads || exit 1
+            sc_update_tiles_planetiler "$_tiles_dir" "$_tiles"
+            ;;
+        maptiler)
+            pushd /tmp || exit 1
+            sc_update_tiles_maptiler "$_tiles_dir" "$_tiles"
+            ;;
+        *)
+            echo "Invalid map data identifier: ${_ST_MAP_DATA}. Aborting..."
+            exit 1
+            ;;
+    esac
+
+    sc_heading 2 "Updating local tiles..."
     mkdir -pv "$_tiles_dir_repo"
     mv -fv "${_tiles_dir}/${_tiles}" "$_tiles_dir_repo"
+    rm -rf "${_tiles_dir}"
 
     sc_heading 2 "Uploading tiles..."
     sc_upload_tiles "${_tiles_dir_repo}/${_tiles}"

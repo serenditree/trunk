@@ -61,6 +61,7 @@ export _ST_GATEWAY=$_ARG_GATEWAY
 export _ST_ZONE_COMPUTE_1=${_ST_ZONE_COMPUTE_1:-at-vie-2}
 export _ST_ZONE_STORAGE_1=${_ST_ZONE_STORAGE_1:-at-vie-1}
 export _ST_ZONE_STORAGE_2=${_ST_ZONE_STORAGE_2:-hr-zag-1}
+export _ST_MAP_DATA=${_ST_MAP_DATA:-planetiler}
 
 export EXOSCALE_ACCOUNT=$_ST_ACCOUNT
 ########################################################################################################################
