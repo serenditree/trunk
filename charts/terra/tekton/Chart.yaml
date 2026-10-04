@@ -7,7 +7,7 @@ appVersion: 0.0.1
 dependencies:
   - name: tekton-pipeline
     repository: https://cdfoundation.github.io/tekton-helm-chart/
-    version: 1.14.0
+    version: 1.15.3
   - name: commons
     repository: oci://quay.io/serenditree/charts
     version: 0.0.1
