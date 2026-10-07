@@ -27,7 +27,7 @@ opensearch:
       cpu: 200m
       memory: 1Gi
     limits:
-      cpu: 200m
+      cpu: 1000m
       memory: 1Gi
   opensearchJavaOpts: "-Xmx512M -Xms512M"
   config:
