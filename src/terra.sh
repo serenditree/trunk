@@ -3,34 +3,45 @@
 # TERRA
 # Cloud infrastructure setup.
 ########################################################################################################################
-# Runs infra commands with all variables set.
-# $*: Command to run.
-function sc_terra_run() {
+# Exports platform credentials for OpenTofu variables and the S3 state backend.
+function sc_terra_credentials() {
     TF_VAR_api_key="$(pass serenditree/iam/serenditree.access)"
     TF_VAR_api_secret="$(pass serenditree/iam/serenditree.secret)"
-    TF_VAR_oidc_parameters="$(sc_terra_oidc)"
-    export TF_VAR_api_key TF_VAR_api_secret TF_VAR_oidc_parameters
+    export TF_VAR_api_key TF_VAR_api_secret
 
     if [[ -z "$AWS_ACCESS_KEY_ID" ]]; then
         AWS_ACCESS_KEY_ID="$(pass serenditree/iam/serenditree.access)"
         AWS_SECRET_ACCESS_KEY="$(pass serenditree/iam/serenditree.secret)"
         export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
     fi
+}
 
-    tofu -chdir="$_ST_CONTEXT_HOME" $* \
-        -var=kubernetes_version="${_ST_VERSION_KUBERNETES}" \
-        -var=wait="${_ARG_WAIT:-false}" \
-        -var=context="${_ST_CONTEXT}" \
-        -var=auto_scaler="${_ST_SCALE}" \
-        -var=gateway="${_ST_GATEWAY}" \
-        -var=stage="${_ST_STAGE}" \
-        -var=host="${_ST_DOMAIN}" \
-        -var=issuer="${_ST_ISSUER}" \
-        -var=email="$(pass serenditree/app/terraCerts.email)" \
-        -var=zone_compute_1="${_ST_ZONE_COMPUTE_1}" \
-        -var=zone_storage_1="${_ST_ZONE_STORAGE_1}" \
-        -var=zone_storage_2="${_ST_ZONE_STORAGE_2}" \
-        -var=charts="${_ST_HOME_TRUNK}/charts"
+# Runs infra commands with all variables set.
+# $*: Command to run. 'storage <cmd>' runs against the storage root instead.
+function sc_terra_run() {
+    if [[ "$1" == "storage" ]]; then
+        shift
+        sc_terra_storage_run $*
+    else
+        sc_terra_credentials
+        TF_VAR_oidc_parameters="$(sc_terra_oidc)"
+        export TF_VAR_oidc_parameters
+
+        tofu -chdir="$_ST_CONTEXT_HOME" $* \
+            -var=kubernetes_version="${_ST_VERSION_KUBERNETES}" \
+            -var=wait="${_ARG_WAIT:-false}" \
+            -var=context="${_ST_CONTEXT}" \
+            -var=auto_scaler="${_ST_SCALE}" \
+            -var=gateway="${_ST_GATEWAY}" \
+            -var=stage="${_ST_STAGE}" \
+            -var=host="${_ST_DOMAIN}" \
+            -var=issuer="${_ST_ISSUER}" \
+            -var=email="$(pass serenditree/app/terraCerts.email)" \
+            -var=zone_compute_1="${_ST_ZONE_COMPUTE_1}" \
+            -var=zone_storage_1="${_ST_ZONE_STORAGE_1}" \
+            -var=zone_storage_2="${_ST_ZONE_STORAGE_2}" \
+            -var=charts="${_ST_HOME_TRUNK}/charts"
+    fi
 }
 
 # Turns OIDC key-value pairs in pass-_folders (standard unix password manager) into JSON objects.
@@ -74,6 +85,92 @@ function sc_terra_versions() {
             sed -Ei "/${_version% *}/,/version/s/(.*>= )[[:digit:/]+(.*)/\1${_version#* }\2/" $_versions_tf
         done
 }
+
+# Creates the bucket holding the OpenTofu states if it does not exist.
+function sc_terra_state_bucket() {
+    local -r _state_bucket=serenditree-state
+    export AWS_PROFILE=serenditree
+    export AWS_REGION=$_ST_ZONE_STORAGE_1
+    export AWS_ENDPOINT_URL="https://sos-${AWS_REGION}.exo.io"
+
+    echo -n "Checking if bucket ${_state_bucket} exists..."
+    if aws s3 ls ${_state_bucket} &>/dev/null; then
+        sc_heading 2 "ok"
+    else
+        aws s3 mb s3://${_state_bucket}
+    fi
+}
+########################################################################################################################
+# Storage
+########################################################################################################################
+# Runs infra commands against the storage root with all variables set.
+# $*: Command to run.
+function sc_terra_storage_run() {
+    sc_terra_credentials
+
+    tofu -chdir="$_ST_STORAGE_HOME" $* \
+        -var=zone_storage_1="${_ST_ZONE_STORAGE_1}" \
+        -var=zone_storage_2="${_ST_ZONE_STORAGE_2}"
+}
+
+# Provisions buckets, replication and bucket-scoped IAM credentials.
+function sc_terra_storage_up() {
+    sc_heading 1 "Initializing storage"
+    sc_terra_state_bucket
+    if [[ -n "$_ARG_INIT" ]]; then
+        rm -rf "${_ST_STORAGE_HOME}/"{terraform*,.terraform}
+    fi
+    tofu -chdir="$_ST_STORAGE_HOME" init \
+        -var=zone_storage_1="${_ST_ZONE_STORAGE_1}" \
+        -upgrade=true
+
+    sc_heading 1 "Planing storage"
+    sc_terra_storage_run plan -out "$_ST_STORAGE_PLAN"
+
+    if [[ -z "$_ARG_DRYRUN" ]]; then
+        sc_heading 1 "Applying storage plan"
+        tofu -chdir="$_ST_STORAGE_HOME" apply "$_ST_STORAGE_PLAN"
+    fi
+}
+
+# Destroys storage resources. Buckets are not force-destroyed, so non-empty buckets survive.
+function sc_terra_storage_down() {
+    sc_prompt "Destroy storage resources?" &&
+        sc_terra_storage_run destroy -auto-approve
+}
+
+# Recreates the storage resources from scratch while keeping the data.
+function sc_terra_storage_recreate() {
+    set -o errexit
+
+    sc_prompt "Recreate storage resources?" || exit 0
+
+    export AWS_PROFILE=serenditree
+    export AWS_REGION=$_ST_ZONE_STORAGE_1
+    export AWS_ENDPOINT_URL="https://sos-${AWS_REGION}.exo.io"
+
+    aws s3 ls |
+        grep -Ev 'state|replica' |
+        cut -d' ' -f3 |
+        xargs -I{} echo aws s3 mb s3://{}-tmp
+    aws s3 ls |
+        grep -Ev 'state|tmp|replica' |
+        cut -d' ' -f3 |
+        xargs -I{} echo aws s3 sync s3://{} s3://{}-tmp
+
+#    sc_terra_storage_down
+#    export _ARG_INIT=on
+#    sc_terra_storage_up
+
+    aws s3 ls |
+        grep -Ev 'state|tmp|replica' |
+        cut -d' ' -f3 |
+        xargs -I{} echo aws s3 sync s3://{}-tmp s3://{}
+    aws s3 ls |
+        grep -E 'tmp' |
+        cut -d' ' -f3 |
+        xargs -I{} echo aws s3 rb s3://{}
+}
 ########################################################################################################################
 # Up
 ########################################################################################################################
@@ -96,16 +193,7 @@ function sc_terra_up_preconditions() {
         exit 1
     fi
 
-    local -r _state_bucket=serenditree-state
-    export AWS_PROFILE=serenditree
-    export AWS_REGION=$_ST_ZONE_STORAGE_1
-    export AWS_ENDPOINT_URL="https://sos-${AWS_REGION}.exo.io"
-    echo -n "Checking if bucket ${_state_bucket} exists..."
-    if aws s3 ls ${_state_bucket} &>/dev/null; then
-        sc_heading 2 "ok"
-    else
-        aws s3 mb s3://${_state_bucket}
-    fi
+    sc_terra_state_bucket
 
     echo -n "Rotating keys..."
     sc_rotate_keys >/dev/null
@@ -197,6 +285,9 @@ function sc_terra_up() {
     export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
 
     if [[ -z "$_ARG_RESUME" ]]; then
+        if [[ -n "${_ARG_SETUP}" ]] && [[ -n "${_ARG_INIT}" ]]; then
+            sc_terra_storage_up
+        fi
         sc_terra_up_init
         if [[ -n "${_ARG_SETUP}" ]]; then
             sc_heading 1 "Planing infrastructure"

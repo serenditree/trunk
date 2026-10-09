@@ -72,6 +72,7 @@ ORDINAL  SERVICE            IMAGE                     TAG     PATH
 └── src               # Source
     ├── kubernetes      # IaC Kubernetes
     ├── openshift       # IaC Openshift (currently not maintained)
+    ├── storage         # IaC object storage (independent of cluster)
     ├── cluster.sh      # Cluster commands
     ├── compose.sh      # Podman compose commands
     ├── container.sh    # Image/Container manipulation
@@ -94,16 +95,17 @@ that processes command-line arguments and calls the functions of dedicated scrip
 
 ```
 Serenditree CLI
-Usage:  sc [-a|--all] [--compose] [--delete] [-D|--dryrun] [-E|--expose] [-h|--help] [--init] [--insert] [--integration] 
-[-k|--kubernetes] [-l|--local] [--open] [-o|--openshift] [-P|--prod] [--reset] [--setup] [-T|--test] [--upgrade] 
-[-w|--wait] [-v|--verbose] [-y|--yes] [--issuer <arg>] [--resume <arg>] [--] <command> ... 
+Usage:  sc [-a|--all] [-c|--compose] [--delete] [-d|--dryrun] [-E|--expose] [-h|--help] [--init] [--insert] 
+[--integration] [-k|--kubernetes] [-l|--local] [-n|--notify] [--open] [-o|--openshift] [-P|--prod] [--reset] [--restore] 
+[--setup] [-T|--test] [--upgrade] [-w|--wait] [-D|--debug] [-v|--verbose] [-y|--yes] [-x|--xissuer] [-s|--scale <arg>] 
+[-g|--gateway <arg>] [--resume <arg>] [--] <command> ... 
 
 	<command>:          Command to execute. Please type sc <help> for a list of commands!
 	... :               Other arguments passed to command.
 	-a, --all:          All...
-	--compose:          Run or build for podman compose.
+	-c, --compose:      Run or build for podman compose.
 	--delete:           Deletion flag.
-	-D, --dryrun:       Activates dryrun mode.
+	-d, --dryrun:       Activates dryrun mode.
 	-E, --expose:       Exposes database ports on local pods.
 	-h, --help:         Command help. Please type sc <help> for a list of commands!
 	--init:             Initialization flag.
@@ -111,22 +113,27 @@ Usage:  sc [-a|--all] [--compose] [--delete] [-D|--dryrun] [-E|--expose] [-h|--h
 	--integration:      Run for integration testing.
 	-k, --kubernetes:   Use vanilla kubernetes.
 	-l, --local:        Target local cluster.
+	-n, --notify:       Enable desktop notifications.
 	--open:             Open plots.
 	-o, --openshift:    Use openshift.
 	-P, --prod:         Sets the target stage to prod. (default is dev)
 	--reset:            Reset flag.
+	--restore:          Restore flag.
 	--setup:            Setup flag.
 	-T, --test:         Sets the target stage to test. (default is dev)
 	--upgrade:          Upgrade flag.
-	-w, --wait:        Watch supported commands.
+	-w, --wait:         Wait for completion.
+	-D, --debug:        Debug flag.
 	-v, --verbose:      Verbose flag.
 	-y, --yes:          Assumes yes on prompts.
-	--issuer:           Set let's encrypt issuer to prod or staging. (default: 'prod')
-	--resume:           Resume plots from the given plot. (default: '.*')
+	-x, --xissuer:      Set cert-issuer to prod when stage is not prod and vice versa.
+	-s, --scale:        Auto-scaling implementation. (default: 'karpenter')
+	-g, --gateway:      Gateway implementation. (default: 'traefik')
+	--resume:           Resume plots from the given plot. (no default)
 
-    Local commands:
-	up|uc|u [svc]:      Starts a local development stack or a single container. [--expose] [--wait] [--compose] [--integration]
-	down|d [svc]:       Stops local stack or single containers. [--compose] [--integration]
+	Local commands:
+	up [svc]:           Starts a local development stack or a single container. [--expose] [--wait] [--compose] [--integration]
+	down [svc]:         Stops local stack or single containers. [--compose] [--integration]
 
 	build [svc]:        Builds all or individual images.
 	backup:             Backup local databases.
@@ -135,44 +142,51 @@ Usage:  sc [-a|--all] [--compose] [--delete] [-D|--dryrun] [-E|--expose] [-h|--h
 	compose [--] <cmd>: Run podman compose commands.
 	config:             Prints cli and java config.
 	context [id]:       Switch or display contexts.
-	database|db <db>:   Open local database console. {user|seed}
+	database <db>:      Open local database console. {user|seed}
 	deploy [svc]:       Deploys all or individual services to the local stack.
 	env:                Prints global environment variables based on context.
+	expose:             Port-forward operation-services. [--reset|--delete]
 	git [--] <cmd>:     Execute arbitrary git commands.
 	helm <cmd> [chart]: Push commons, update dependencies or render charts.
-	health|h:           Runs health-checks on services. [--wait|--verbose]
+	health:             Runs health-checks on services. [--wait|--verbose]
 	loc:                Prints lines of code.
 	login <reg>:        Login to configured registries.
 	logs|log [svc]:     Prints logs of all or individual services on the local pod.
 	plots:              Prints or inserts/deletes plots. [--open] [--insert|--delete]
+	proxy:              Proxy kubernetes services.
 	ps:                 Lists locally running serenditree containers.
 	push [svc]:         Push all or individual images.
 	registry:           Inspect images in remote registries. [--verbose]
 	release:            Updates the parent git repository and pushes new commits.
-	reset:              Removes all local images created by this cli.
 	restore:            Restores local databases from remote data.
-	status|s:           Prints status information and checks prerequisites.
-	test:               Prepares and runs tests.
+	rotate:             Rotates JWK material locally.
+	status:             Prints status information and checks prerequisites.
+	storage <cmd>:      Provision or destroy storage independent of clusters. {up|down}
+	terra <cmd>:        Run infra commands with all variables set.
+	test:               Prepares and runs tests. [--delete][--verbose]
 	update [comp]:      Update components.
 
-    Cluster commands:
-	up:                 Cluster start/setup. [--init] [--setup] [--dashboard]
+	Cluster commands:
+	up:                 Cluster start/setup. [--init] [--setup] [--wait] [--scale]
 	down:               Cluster stop/deletion. [--reset|--delete] [--yes]
 
 	backup:             Setup backup cronjobs or run backups from cronjobs. [--setup]
-	certificate|cert:   Prints certificate information.
+	certificate:        Prints certificate information.
 	clean:              Deletes dispensable resources.
-	dashboard:          Launches the clusters dashboard.
-	database|db <db>:   Open database console. {user|seed}
+	database <db>:      Open database console. {user|seed}
 	deploy:             Deploys new images.
 	expose:             Port-forward operation-services. [--reset|--delete]
+	keys:               List all keys in the cluster's vault.
 	login:              Login to OpenShift and its internal registry.
 	logs <svc>:         Prints logs of the given pod(s).
+	proxy:              Proxy kubernetes services.
 	registry [img]:     Inspects the OpenShift image registry.
-	resources|rc [csv]: Prints resource allocations. Optionally in CSV.
+	resources [csv]:    Prints resource allocations. Optionally in CSV.
 	restore:            Restore databases.
 	status:             Prints cluster status information.
-	tekton|t [svc]:     Triggers tekton runs for all or individual services.
+	tekton [svc]:       Triggers tekton runs for all or individual services.
+	test:               Run tests using k6-operator. [--delete]
+	unseal:             Unseal the cluster's vault
 
 Please type 'sc <command> --help' for details about a certain command!
 ```

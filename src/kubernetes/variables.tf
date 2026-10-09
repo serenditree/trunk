@@ -106,28 +106,6 @@ variable "compute_nodes" {
   }
 }
 ########################################################################################################################
-# Storage
-########################################################################################################################
-variable "storage_data" {
-  description = "Bucket for application assets."
-  type        = string
-  default     = ""
-  #default = "serenditree-data"
-}
-
-variable "storage_backup" {
-  description = "Buckets for backups."
-  type        = set(string)
-  default     = []
-  #default = ["serenditree-backup-seed", "serenditree-backup-user"]
-}
-
-variable "storage_backup_lifecycle" {
-  description = "Enable bucket lifecycle."
-  type        = bool
-  default     = false
-}
-########################################################################################################################
 # Global
 ########################################################################################################################
 variable "context" {

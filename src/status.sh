@@ -141,7 +141,6 @@ function sc_status_cluster() {
         column -t &&
         echo
     exo storage ls --use-account serenditree --versions sos://serenditree-backup-seed/ |
-        grep 'index.latest' |
         head -n $_head |
         column -t
 

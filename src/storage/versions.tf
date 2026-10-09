@@ -4,14 +4,14 @@ terraform {
       source  = "exoscale/exoscale"
       version = "~> 0.65"
     }
-    helm = {
-      source  = "hashicorp/helm"
-      version = "~> 3.0"
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
     }
   }
   backend "s3" {
     bucket       = "serenditree-state"
-    key          = "serenditree.tfstate"
+    key          = "serenditree-storage.tfstate"
     region       = var.zone_storage_1
     use_lockfile = true
 

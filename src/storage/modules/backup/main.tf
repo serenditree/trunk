@@ -1,6 +1,10 @@
 ########################################################################################################################
 # Backup
 ########################################################################################################################
+locals {
+  retention_days = 3
+}
+
 resource "aws_s3_bucket" "serenditree_backup" {
   for_each = var.backup_buckets
   bucket   = each.key
@@ -16,7 +20,7 @@ resource "aws_s3_bucket_object_lock_configuration" "serenditree_backup_object_lo
   rule {
     default_retention {
       mode = "GOVERNANCE"
-      days = 3
+      days = local.retention_days
     }
   }
 }
@@ -43,7 +47,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "serenditree_backup_lifecycle" 
     }
 
     noncurrent_version_expiration {
-      noncurrent_days = 3
+      noncurrent_days = local.retention_days
     }
 
     expiration {

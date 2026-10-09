@@ -167,6 +167,7 @@ function sc_help() {
     printf '\t%-20s%s\n' "restore:" "Restores local databases from remote data."
     printf '\t%-20s%s\n' "rotate:" "Rotates JWK material locally."
     printf '\t%-20s%s\n' "status:" "Prints status information and checks prerequisites."
+    printf '\t%-20s%s\n' "storage <cmd>:" "Provision or destroy storage independent of clusters. {up|down|recreate}"
     printf '\t%-20s%s\n' "terra <cmd>:" "Run infra commands with all variables set."
     printf '\t%-20s%s\n' "test:" "Prepares and runs tests. [--delete][--verbose]"
     printf '\t%-20s%s\n' "update [comp]:" "Update components."
@@ -481,6 +482,31 @@ terra)
         echo "Run infra (OpenTofu) commands with all variables set."
     else
         sc_terra_run ${_ARG_LEFTOVERS[*]}
+    fi
+    ;;
+storage)
+    if [[ -n "$_ARG_HELP" ]]; then
+        sc_heading 2 "sc storage {up|down|recreate} [--init] [--dryrun] [--yes]"
+        echo "Provision or destroy buckets, replication and bucket-scoped IAM credentials."
+        printf '\n\t%-20s%s\n' "up" "Initialize, plan and apply. [--init] [--dryrun]"
+        printf '\t%-20s%s\n' "down" "Destroy storage resources. Non-empty buckets are kept. [--yes]"
+        printf '\t%-20s%s\n' "recreate" "Recreates the storage resources from scratch while keeping the data. [--yes]"
+    else
+        case ${_ARG_SUB_COMMAND} in
+        up)
+            time sc_terra_storage_up
+            ;;
+        down)
+            time sc_terra_storage_down
+            ;;
+        recreate)
+            time sc_terra_storage_recreate
+            ;;
+        *)
+            sc_heading 2 "Unknown storage command: ${_ARG_SUB_COMMAND}"
+            print_help
+            ;;
+        esac
     fi
     ;;
 test)
