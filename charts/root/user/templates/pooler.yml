@@ -55,7 +55,7 @@ spec:
     poolMode: transaction
     parameters:
       max_client_conn: "2000"
-      default_pool_size: "30"
-      min_pool_size: "15"
-      reserve_pool_size: "10"
-      max_db_connections: "80"
+      default_pool_size: "15"
+      min_pool_size: "5"
+      reserve_pool_size: "5"
+      max_db_connections: "25"
