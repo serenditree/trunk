@@ -15,7 +15,7 @@ kubectl apply --server-side --filename "$CRDS"
 case "$GATEWAY" in
 traefik)
     kubectl apply --server-side --filename \
-        https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.2/standard-install.yaml
+        https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.3/standard-install.yaml
     ;;
 envoy)
     helm template eg-crds oci://docker.io/envoyproxy/gateway-crds-helm \
