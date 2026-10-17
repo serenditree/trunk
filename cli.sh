@@ -892,7 +892,7 @@ status)
     ;;
 terra)
     if [[ -n "$_ARG_HELP" ]]; then
-        sc_heading 2 "sc terra <cmd>"
+        sc_heading 2 "sc terra [storage] <cmd>"
         echo "Run infra (OpenTofu) commands with all variables set."
     else
         sc_terra_run ${_ARG_LEFTOVERS[*]}
@@ -904,6 +904,7 @@ storage)
         echo "Provision or destroy buckets, replication and bucket-scoped IAM credentials."
         printf '\n\t%-20s%s\n' "up" "Initialize, plan and apply. [--init] [--dryrun]"
         printf '\t%-20s%s\n' "down" "Destroy storage resources. Non-empty buckets are kept. [--yes]"
+        printf '\t%-20s%s\n' "recreate" "Recreates the storage resources from scratch while keeping the data. [--yes]"
     else
         case ${_ARG_SUB_COMMAND} in
         up)

@@ -119,30 +119,7 @@ function sc_status_cluster() {
     sc_heading 1 "Balance"
     sc_cluster_balance
 
-    if [[ -n "$_ready" ]];then
-        sc_heading 1 "Pods"
-        kubectl get pods --all-namespaces --output wide --no-headers | grep -Ev "Running|Completed" || echo "No issues"
-        sc_heading 1 Apps
-        echo -n "ArgoCD login..."
-        if argocd version --request-timeout 1s &>/dev/null || sc_login argocd >/dev/null; then
-            sc_heading 2 "ok"
-            argocd app list | sed '1d' | grep -v Healthy || echo "No issues"
-        else
-            sc_heading 2 "error"
-        fi
-    fi
-
-    sc_heading 1 "Storage"
-    local _head=7
-    [[ -n "$_ARG_VERBOSE" ]] && _head=9999
-    exo storage ls --use-account serenditree | sort -k6 | column -t && echo
-    exo storage ls --use-account serenditree --versions sos://serenditree-backup-user/ |
-        head -n $_head |
-        column -t &&
-        echo
-    exo storage ls --use-account serenditree --versions sos://serenditree-backup-seed/ |
-        head -n $_head |
-        column -t
+    sc_status_cluster_storage
 
     if [[ -n "${_ST_CONTEXT_KUBERNETES_LOCAL}${_ST_CONTEXT_OPENSHIFT_LOCAL}" ]]; then
         sc_heading 1 "Local"
@@ -152,6 +129,32 @@ function sc_status_cluster() {
             crc config view
         fi
     fi
+}
+
+# Displays configuration and metrics of managed buckets.
+function sc_status_cluster_storage() {
+    sc_heading 1 "Storage"
+    sc_login_aws
+
+    while IFS=' ' read -r _date _time _bucket; do
+        sc_heading 2 "$_bucket"
+
+        if [[ $_bucket =~ replica$ ]]; then
+            AWS_DEFAULT_REGION=$_ST_ZONE_STORAGE_2
+        else
+            AWS_DEFAULT_REGION=$_ST_ZONE_STORAGE_1
+        fi
+        AWS_ENDPOINT_URL="https://sos-${AWS_DEFAULT_REGION}.exo.io"
+        export AWS_DEFAULT_REGION AWS_ENDPOINT_URL
+
+        aws s3 ls "$_bucket" --recursive --summarize --human-readable | tail -2
+
+        [[ -n "$_ARG_VERBOSE" ]] && [[ $_bucket =~ backup ]] &&
+            echo -e "\nFiles:" && aws s3 ls "$_bucket" &&
+            echo -e "\nLifecycle:" && aws s3api get-bucket-lifecycle --bucket="$_bucket" &&
+            ! [[ $_bucket =~ replica$ ]] &&
+            echo -e "\nReplication:" && aws s3api get-bucket-replication --bucket="$_bucket"
+    done < <(aws s3 ls)
 }
 
 # Prints an overview of the development environment.

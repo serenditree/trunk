@@ -9,21 +9,18 @@ function sc_terra_credentials() {
     TF_VAR_api_secret="$(pass serenditree/iam/serenditree.secret)"
     export TF_VAR_api_key TF_VAR_api_secret
 
-    if [[ -z "$AWS_ACCESS_KEY_ID" ]]; then
-        AWS_ACCESS_KEY_ID="$(pass serenditree/iam/serenditree.access)"
-        AWS_SECRET_ACCESS_KEY="$(pass serenditree/iam/serenditree.secret)"
-        export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
-    fi
+    [[ -z "$AWS_ACCESS_KEY_ID" ]] && sc_login_aws
 }
 
 # Runs infra commands with all variables set.
 # $*: Command to run. 'storage <cmd>' runs against the storage root instead.
 function sc_terra_run() {
+    sc_terra_credentials
+
     if [[ "$1" == "storage" ]]; then
         shift
         sc_terra_storage_run $*
     else
-        sc_terra_credentials
         TF_VAR_oidc_parameters="$(sc_terra_oidc)"
         export TF_VAR_oidc_parameters
 
@@ -89,9 +86,6 @@ function sc_terra_versions() {
 # Creates the bucket holding the OpenTofu states if it does not exist.
 function sc_terra_state_bucket() {
     local -r _state_bucket=serenditree-state
-    export AWS_PROFILE=serenditree
-    export AWS_REGION=$_ST_ZONE_STORAGE_1
-    export AWS_ENDPOINT_URL="https://sos-${AWS_REGION}.exo.io"
 
     echo -n "Checking if bucket ${_state_bucket} exists..."
     if aws s3 ls ${_state_bucket} &>/dev/null; then
@@ -106,8 +100,6 @@ function sc_terra_state_bucket() {
 # Runs infra commands against the storage root with all variables set.
 # $*: Command to run.
 function sc_terra_storage_run() {
-    sc_terra_credentials
-
     tofu -chdir="$_ST_STORAGE_HOME" $* \
         -var=zone_storage_1="${_ST_ZONE_STORAGE_1}" \
         -var=zone_storage_2="${_ST_ZONE_STORAGE_2}"
@@ -116,6 +108,7 @@ function sc_terra_storage_run() {
 # Provisions buckets, replication and bucket-scoped IAM credentials.
 function sc_terra_storage_up() {
     sc_heading 1 "Initializing storage"
+    sc_login_aws
     sc_terra_state_bucket
     if [[ -n "$_ARG_INIT" ]]; then
         rm -rf "${_ST_STORAGE_HOME}/"{terraform*,.terraform}
@@ -145,9 +138,7 @@ function sc_terra_storage_recreate() {
 
     sc_prompt "Recreate storage resources?" || exit 0
 
-    export AWS_PROFILE=serenditree
-    export AWS_REGION=$_ST_ZONE_STORAGE_1
-    export AWS_ENDPOINT_URL="https://sos-${AWS_REGION}.exo.io"
+    sc_login_aws
 
     aws s3 ls |
         grep -Ev 'state|replica' |
@@ -280,9 +271,7 @@ function sc_terra_up_wait() {
 
 # Provisions infrastructure, configures context, bootstraps Serenditree and hands-over control to ArgoCD.
 function sc_terra_up() {
-    AWS_ACCESS_KEY_ID="$(pass serenditree/iam/serenditree.access)"
-    AWS_SECRET_ACCESS_KEY="$(pass serenditree/iam/serenditree.secret)"
-    export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+    sc_login_aws
 
     if [[ -z "$_ARG_RESUME" ]]; then
         if [[ -n "${_ARG_SETUP}" ]] && [[ -n "${_ARG_INIT}" ]]; then
@@ -338,9 +327,7 @@ function sc_terra_down_volumes() {
 
 # Removes all resources that were create during setup.
 function sc_terra_down() {
-    AWS_ACCESS_KEY_ID="$(pass serenditree/iam/serenditree.access)"
-    AWS_SECRET_ACCESS_KEY="$(pass serenditree/iam/serenditree.secret)"
-    export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+    sc_login_aws
 
     echo "Saving persistent volumes..."
     kubectl get pv --output=custom-columns='name:.metadata.name' --no-headers | tee /tmp/serenditree-pv

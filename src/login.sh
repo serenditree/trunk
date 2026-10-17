@@ -130,3 +130,15 @@ function sc_login_db() {
         ;;
     esac
 }
+
+# Sets profile, region, endpoint and credentials for s3.
+# $1: Region (default: _ST_ZONE_STORAGE_1)
+function sc_login_aws() {
+    AWS_PROFILE=serenditree
+    AWS_DEFAULT_REGION=${1:-$_ST_ZONE_STORAGE_1}
+    AWS_ENDPOINT_URL="https://sos-${AWS_DEFAULT_REGION}.exo.io"
+    AWS_ACCESS_KEY_ID="$(pass serenditree/iam/serenditree.access)"
+    AWS_SECRET_ACCESS_KEY="$(pass serenditree/iam/serenditree.secret)"
+
+    export AWS_PROFILE AWS_DEFAULT_REGION AWS_ENDPOINT_URL AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+}

@@ -478,7 +478,7 @@ status)
     ;;
 terra)
     if [[ -n "$_ARG_HELP" ]]; then
-        sc_heading 2 "sc terra <cmd>"
+        sc_heading 2 "sc terra [storage] <cmd>"
         echo "Run infra (OpenTofu) commands with all variables set."
     else
         sc_terra_run ${_ARG_LEFTOVERS[*]}
