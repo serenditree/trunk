@@ -1,32 +1,29 @@
 ########################################################################################################################
 # Platform
 ########################################################################################################################
-variable "ssh_key_pair" {
+variable "zone" {
   type = string
 }
 
-variable "default_security_group_id" {
+variable "security_group_ids" {
+  type = list(string)
+}
+
+variable "template_id" {
   type = string
 }
 ########################################################################################################################
 # Cluster
 ########################################################################################################################
-variable "zone" {
+variable "cluster_name" {
   type = string
 }
 
 variable "base_domain" {
-  type = object({
-    id   = string
-    name = string
-  })
-}
-
-variable "cluster_name" {
   type = string
 }
 ########################################################################################################################
-# Nodes
+# Node
 ########################################################################################################################
 variable "bootstrap_enabled" {
   type = bool
@@ -34,36 +31,12 @@ variable "bootstrap_enabled" {
 
 variable "bootstrap_node_config" {
   type = object({
-    template_id   = string
     instance_type = string
     disk_size     = number
   })
 }
 
-variable "master_nodes_config" {
-  description = "The master nodes to create."
-  type = object({
-    name           = string
-    replicas       = number
-    hyperthreading = string
-    template_id    = string
-    instance_type  = string
-    disk_size      = number
-  })
-}
-
-variable "worker_nodes_enabled" {
-  type = bool
-}
-
-variable "worker_nodes_config" {
-  description = "The worker nodes to create."
-  type = list(object({
-    name           = string
-    replicas       = number
-    hyperthreading = string
-    template_id    = string
-    instance_type  = string
-    disk_size      = number
-  }))
+variable "user_data" {
+  description = "Stub ignition config pointing at the pre-signed bootstrap.ign."
+  type        = string
 }

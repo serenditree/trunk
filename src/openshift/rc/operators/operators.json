@@ -1,0 +1,34 @@
+[
+  {
+    "package": "openshift-pipelines-operator-rh",
+    "channel": "latest",
+    "namespace": "openshift-operators",
+    "catalog": "redhat-operators",
+    "operand": {
+      "resource": "tektonconfig.operator.tekton.dev",
+      "name": "config",
+      "namespace": "",
+      "jsonpath": "{.status.conditions[?(@.type==\"Ready\")].status}",
+      "value": "True"
+    }
+  },
+  {
+    "package": "openshift-gitops-operator",
+    "channel": "latest",
+    "namespace": "openshift-gitops-operator",
+    "catalog": "redhat-operators",
+    "operand": {
+      "resource": "argocd.argoproj.io",
+      "name": "openshift-gitops",
+      "namespace": "openshift-gitops",
+      "jsonpath": "{.status.phase}",
+      "value": "Available"
+    }
+  },
+  {
+    "package": "strimzi-kafka-operator",
+    "channel": "strimzi-1.x",
+    "namespace": "openshift-operators",
+    "catalog": "community-operators"
+  }
+]

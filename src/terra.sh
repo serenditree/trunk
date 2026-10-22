@@ -143,24 +143,24 @@ function sc_terra_storage_recreate() {
     aws s3 ls |
         grep -Ev 'state|replica' |
         cut -d' ' -f3 |
-        xargs -I{} echo aws s3 mb s3://{}-tmp
+        xargs -I{} aws s3 mb s3://{}-tmp
     aws s3 ls |
         grep -Ev 'state|tmp|replica' |
         cut -d' ' -f3 |
-        xargs -I{} echo aws s3 sync s3://{} s3://{}-tmp
+        xargs -I{} aws s3 sync s3://{} s3://{}-tmp
 
-#    sc_terra_storage_down
-#    export _ARG_INIT=on
-#    sc_terra_storage_up
+    sc_terra_storage_down
+    export _ARG_INIT=on
+    sc_terra_storage_up
 
     aws s3 ls |
         grep -Ev 'state|tmp|replica' |
         cut -d' ' -f3 |
-        xargs -I{} echo aws s3 sync s3://{}-tmp s3://{}
+        xargs -I{} aws s3 sync s3://{}-tmp s3://{}
     aws s3 ls |
         grep -E 'tmp' |
         cut -d' ' -f3 |
-        xargs -I{} echo aws s3 rb s3://{}
+        xargs -I{} aws s3 rb s3://{}
 }
 ########################################################################################################################
 # Up
@@ -197,7 +197,7 @@ function sc_terra_up_init() {
     sc_heading 1 "Initializing"
     sc_terra_up_preconditions
     if [[ -n "$_ARG_INIT" ]]; then
-        rm -rf "${_ST_CONTEXT_HOME}/"{terraform*,.terraform,modules/bootstrap/assets}
+        rm -rf "${_ST_CONTEXT_HOME}/"{terraform*,.terraform}
     fi
     tofu -chdir="$_ST_CONTEXT_HOME" init \
         -var=zone_storage_1="${_ST_ZONE_STORAGE_1}" \

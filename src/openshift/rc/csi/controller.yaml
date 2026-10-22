@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exoscale-csi-controller
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      hostNetwork: true
+      containers:
+        # snapshot-controller is the cluster-wide snapshot controller, not a per-driver sidecar, and OpenShift
+        # already runs one.
+        - $patch: delete
+          name: snapshot-controller
+        - name: exoscale-csi-plugin
+          ports:
+            - $patch: replace
+            - containerPort: 9809
+              name: healthz
+              protocol: TCP
+        - name: liveness-probe
+          args:
+            - --csi-address=$(CSI_ADDRESS)
+            - --http-endpoint=:9809

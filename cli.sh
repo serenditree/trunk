@@ -979,7 +979,9 @@ cluster)
             printf '\n\t%-20s%s\n' "--setup" "Setup the cluster of the current context."
             printf '\n\t%-20s%s\n' "--upgrade" "Upgrade the cluster of the current context."
         else
-            if [[ -n "${_ARG_SETUP}${_ARG_INIT}" ]]; then
+            if [[ -n "$_ST_CONTEXT_IS_OPENSHIFT" ]] && [[ -n "$_ST_CONTEXT_IS_REMOTE" ]]; then
+                time bash "${_ST_CONTEXT_HOME}/apply.sh"
+            elif [[ -n "${_ARG_SETUP}${_ARG_INIT}" ]]; then
                 time sc_terra_up
             else
                 time sc_cluster_up
@@ -995,7 +997,9 @@ cluster)
             printf '\t%-20s%s\n' "--reset" "Reset the cluster of the current context."
             printf '\t%-20s%s\n' "--delete" "Delete the cluster of the current context."
          else
-            if [[ -n "$_ARG_DELETE" ]]; then
+             if [[ -n "$_ST_CONTEXT_IS_OPENSHIFT" ]] && [[ -n "$_ST_CONTEXT_IS_REMOTE" ]]; then
+                time bash "${_ST_CONTEXT_HOME}/destroy.sh"
+            elif [[ -n "$_ARG_DELETE" ]]; then
                 sc_prompt "Delete cluster?" && time sc_terra_down
             else
                 sc_prompt "Stop worker nodes?" && time sc_cluster_down

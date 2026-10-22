@@ -1,0 +1,11 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: ${OPERATOR_PACKAGE}
+  namespace: ${OPERATOR_NAMESPACE}
+spec:
+  name: ${OPERATOR_PACKAGE}
+  channel: ${OPERATOR_CHANNEL}
+  source: ${OPERATOR_CATALOG}
+  sourceNamespace: ${CATALOG_NAMESPACE}
+  installPlanApproval: Automatic

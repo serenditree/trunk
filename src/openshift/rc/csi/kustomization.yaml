@@ -1,0 +1,41 @@
+# The upstream deployment is the base, the two patches beside this file are what OpenShift needs on top of it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - https://github.com/exoscale/exoscale-csi-driver/deployment/latest?ref=main
+  - scc.yaml
+patches:
+  - path: node.yaml
+  - path: controller.yaml
+  # OpenShift already provides it.
+  - target:
+      group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: volumesnapshotclasses.snapshot.storage.k8s.io
+    patch: |
+      $patch: delete
+      apiVersion: apiextensions.k8s.io/v1
+      kind: CustomResourceDefinition
+      metadata:
+        name: volumesnapshotclasses.snapshot.storage.k8s.io
+  - target:
+      group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: volumesnapshotcontents.snapshot.storage.k8s.io
+    patch: |
+      $patch: delete
+      apiVersion: apiextensions.k8s.io/v1
+      kind: CustomResourceDefinition
+      metadata:
+        name: volumesnapshotcontents.snapshot.storage.k8s.io
+  - target:
+      group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: volumesnapshots.snapshot.storage.k8s.io
+    patch: |
+      $patch: delete
+      apiVersion: apiextensions.k8s.io/v1
+      kind: CustomResourceDefinition
+      metadata:
+        name: volumesnapshots.snapshot.storage.k8s.io

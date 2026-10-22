@@ -42,6 +42,8 @@ Chart.lock
 ### Custom ###
 **/bootstrap/assets/*/**
 *.iam
+.assets/
+.image/
 .terraform.lock.hcl
 data/
 generated/
