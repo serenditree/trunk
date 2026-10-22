@@ -84,7 +84,7 @@ if [[ -f /etc/fedora-release ]] && [[ -z "$_ST_CONTEXT_TKN" ]]; then
     export _ST_VERSION_FEDORA
 fi
 export _ST_VERSION_ANGULAR=22
-export _ST_VERSION_BUILDAH=v1.43.4
+export _ST_VERSION_BUILDAH=v1.43.5
 export _ST_VERSION_GO=1.27
 export _ST_VERSION_JAVA=25
 export _ST_VERSION_K6=2.3.0
