@@ -30,7 +30,8 @@ if [[ " $* " =~ " build " ]]; then
         _CONTAINER_REF=$(buildah from scratch)
         _MOUNT_REF=$(buildah mount $_CONTAINER_REF)
 
-        $_ST_DNF_HOST install --installroot ${_MOUNT_REF:?} $_ST_DNF_OPTS_HOST $_ST_JAVA_PACKAGE curl ca-certificates
+        $_ST_DNF_HOST install --installroot ${_MOUNT_REF:?} $_ST_DNF_OPTS_HOST $_ST_JAVA_PACKAGE \
+            curl ca-certificates glibc-langpack-en
         $_ST_DNF_HOST clean all --installroot ${_MOUNT_REF:?} --noplugins
 
         buildah add $_CONTAINER_REF ./src/run.sh ${_ST_CONTAINER_ROOT}/run.sh
@@ -73,7 +74,7 @@ if [[ " $* " =~ " build " ]]; then
         _CONTAINER_REF=$(buildah from serenditree/java-base)
         _MOUNT_REF=$(buildah mount $_CONTAINER_REF)
 
-        $_ST_DNF_HOST install --installroot ${_MOUNT_REF:?} $_ST_DNF_OPTS_HOST $_ST_JAVA_PACKAGE_DEVEL maven
+        $_ST_DNF_HOST install --installroot ${_MOUNT_REF:?} $_ST_DNF_OPTS_HOST $_ST_JAVA_PACKAGE_DEVEL maven unzip
         $_ST_DNF_HOST clean all --installroot ${_MOUNT_REF:?} --noplugins
 
         buildah config \
