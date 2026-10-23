@@ -1,6 +1,8 @@
 ########################################################################################################################
 # Environment
 ########################################################################################################################
+[[ -f ~/.config/serenditree/ocp.env ]] && source ~/.config/serenditree/ocp.env
+
 EXOSCALE_API_KEY="$(pass exoscale/dev@exoscale.com.access)"
 EXOSCALE_API_SECRET="$(pass exoscale/dev@exoscale.com.secret)"
 EXOSCALE_ACCOUNT=$_ST_ACCOUNT
