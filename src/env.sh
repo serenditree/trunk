@@ -95,7 +95,7 @@ export _ST_VERSION_NGINX=release-1.31.8
 export _ST_VERSION_NGINX_OTEL=v0.1.2
 export _ST_VERSION_OPENSEARCH=3
 export _ST_VERSION_POSTGRESQL=18
-export _ST_VERSION_TILESERVER=5.6.0
+export _ST_VERSION_TILESERVER=5.7.0
 
 #export _ST_VERSION_FIXED_HELM=cert-manager # chart[|chart]
 ########################################################################################################################
