@@ -122,7 +122,9 @@ function sc_terra_storage_up() {
 
     if [[ -z "$_ARG_DRYRUN" ]]; then
         sc_heading 1 "Applying storage plan"
+        trap 'sc_notify failed; trap - ERR; return 1' ERR
         tofu -chdir="$_ST_STORAGE_HOME" apply "$_ST_STORAGE_PLAN"
+        trap - ERR
     fi
 }
 
@@ -275,7 +277,7 @@ function sc_terra_up() {
 
     if [[ -z "$_ARG_RESUME" ]]; then
         if [[ -n "${_ARG_SETUP}" ]] && [[ -n "${_ARG_INIT}" ]]; then
-            sc_terra_storage_up
+            sc_terra_storage_up || return 1
         fi
         sc_terra_up_init
         if [[ -n "${_ARG_SETUP}" ]]; then
@@ -288,7 +290,9 @@ function sc_terra_up() {
         sc_terra_render
     elif [[ -n "${_ARG_SETUP}" ]]; then
         sc_heading 1 "Applying plan"
+        trap 'sc_notify failed' ERR
         tofu -chdir="$_ST_CONTEXT_HOME" apply "$_ST_CONTEXT_PLAN"
+        trap - ERR
         sc_heading 1 "Setting up context"
         sc_context_clean
         sc_context_init_kube "${_ST_CONTEXT_HOME}/kubeconfig"

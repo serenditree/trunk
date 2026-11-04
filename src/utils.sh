@@ -14,7 +14,10 @@ function sc_heading() {
     [[ "$1" == "n" ]] && shift && echo
 
     echo -n "${_BOLD}"
-    [[ $_heading_id -eq 1 ]] && [[ -z "$_ST_CONTEXT_TKN" ]] && printf "%*s\n" $(tput cols) | tr " " "-"
+    if [[ $_heading_id -eq 1 ]] && [[ -z "$_ST_CONTEXT_TKN" ]]; then
+        sc_notify "$*"
+        printf "%*s\n" $(tput cols) | tr " " "-"
+    fi
     echo "$*"
     [[ $_heading_id -eq 1 ]] && [[ -z "$_ST_CONTEXT_TKN" ]] && printf "%*s\n" $(tput cols) | tr " " "-"
     echo -n "${_NORMAL}"
