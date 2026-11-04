@@ -48,7 +48,7 @@ function sc_context_init_kube() {
     fi
     echo "Creating backup of ${KUBECONFIG}..."
     cp -v "$KUBECONFIG" "${KUBECONFIG}.$(date +%Y%m%d-%H%M%S).bak"
-    local -r _context_serenditree="$(sed -En 's/.*current-context: (.*)/\1/p' "$_kubeconfig")"
+    local -r _context_serenditree="$(sed -En 's/.*current-context: "?(.*)"?/\1/p' "$_kubeconfig")"
     sed -i '/current-context/d' "$KUBECONFIG"
     echo "Merging contexts..."
     KUBECONFIG="${KUBECONFIG}:${_kubeconfig}" kubectl config view --flatten >"${KUBECONFIG}.merged"
