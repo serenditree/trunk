@@ -29,7 +29,7 @@ if [[ " $* " =~ " build " ]]; then
 
     sc_heading 2 "Installing build-dependencies..."
     $_ST_DNF_HOST install --installroot ${_BUILD_MOUNT_REF:?} $_ST_DNF_OPTS_HOST \
-        c-ares-devel cmake gcc-c++ git openssl-devel openssl-devel-engine pcre2-devel zlib-ng-compat-devel
+        c-ares-devel cmake gcc-c++ git openssl3-devel openssl3-devel-engine pcre2-devel zlib-ng-compat-devel
 
     sc_heading 2 "Building and installing nginx with modules..."
     buildah config \
