@@ -49366,7 +49366,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-    operator.prometheus.io/version: 0.95.1
+    operator.prometheus.io/version: 0.95.2
     meta.helm.sh/release-name: terra-scope
     meta.helm.sh/release-namespace: terra-scope
   name: alertmanagerconfigs.monitoring.coreos.com
@@ -60833,7 +60833,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-    operator.prometheus.io/version: 0.95.1
+    operator.prometheus.io/version: 0.95.2
     meta.helm.sh/release-name: terra-scope
     meta.helm.sh/release-namespace: terra-scope
   name: alertmanagers.monitoring.coreos.com
@@ -70716,7 +70716,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-    operator.prometheus.io/version: 0.95.1
+    operator.prometheus.io/version: 0.95.2
     meta.helm.sh/release-name: terra-scope
     meta.helm.sh/release-namespace: terra-scope
   name: podmonitors.monitoring.coreos.com
@@ -72073,7 +72073,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-    operator.prometheus.io/version: 0.95.1
+    operator.prometheus.io/version: 0.95.2
     meta.helm.sh/release-name: terra-scope
     meta.helm.sh/release-namespace: terra-scope
   name: probes.monitoring.coreos.com

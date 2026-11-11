@@ -5,7 +5,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-    operator.prometheus.io/version: 0.95.1
+    operator.prometheus.io/version: 0.95.2
     meta.helm.sh/release-name: terra-scope
     meta.helm.sh/release-namespace: terra-scope
   name: prometheusagents.monitoring.coreos.com
@@ -11353,7 +11353,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-    operator.prometheus.io/version: 0.95.1
+    operator.prometheus.io/version: 0.95.2
     meta.helm.sh/release-name: terra-scope
     meta.helm.sh/release-namespace: terra-scope
   name: prometheuses.monitoring.coreos.com
@@ -24920,7 +24920,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-    operator.prometheus.io/version: 0.95.1
+    operator.prometheus.io/version: 0.95.2
     meta.helm.sh/release-name: terra-scope
     meta.helm.sh/release-namespace: terra-scope
   name: prometheusrules.monitoring.coreos.com
@@ -25174,7 +25174,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-    operator.prometheus.io/version: 0.95.1
+    operator.prometheus.io/version: 0.95.2
     meta.helm.sh/release-name: terra-scope
     meta.helm.sh/release-namespace: terra-scope
   name: scrapeconfigs.monitoring.coreos.com
@@ -37221,7 +37221,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-    operator.prometheus.io/version: 0.95.1
+    operator.prometheus.io/version: 0.95.2
     meta.helm.sh/release-name: terra-scope
     meta.helm.sh/release-namespace: terra-scope
   name: servicemonitors.monitoring.coreos.com
@@ -38604,7 +38604,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-    operator.prometheus.io/version: 0.95.1
+    operator.prometheus.io/version: 0.95.2
     meta.helm.sh/release-name: terra-scope
     meta.helm.sh/release-namespace: terra-scope
   name: thanosrulers.monitoring.coreos.com

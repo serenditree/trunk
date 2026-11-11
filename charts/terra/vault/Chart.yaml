@@ -9,7 +9,7 @@ dependencies:
     version: 0.30.7
   - name: external-secrets
     repository: https://charts.external-secrets.io
-    version: 2.14.0
+    version: 2.15.0
   - name: reloader
     repository: https://stakater.github.io/stakater-charts
-    version: 2.2.19
+    version: 2.2.20
