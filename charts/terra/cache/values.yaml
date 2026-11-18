@@ -3,10 +3,11 @@ global:
   wave: ~
 valkey:
   fullnameOverride: terra-cache
-  replica:
-    enabled: false
-    replicas: 3
-    persistence:
-      size: ""
-  podDisruptionBudget:
-    enabled: true
+#  replica:
+#    enabled: true
+#    replicas: 3
+#  persistence:
+#    enabled: true
+#    size: 10Gi
+#  podDisruptionBudget:
+#    enabled: true
