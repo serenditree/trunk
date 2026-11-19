@@ -14,13 +14,13 @@ export const SOUTH_WEST = {
 };
 
 const DACH_NORTH_EAST = {
-    lng: 17.2,
-    lat: 55.1
+    lng: 14.0,
+    lat: 54.0
 };
 
 const DACH_SOUTH_WEST = {
-    lng: 5.5,
-    lat: 45.7
+    lng: 7.0,
+    lat: 47.3
 };
 
 const ST_HEADERS_PREFIX = 'X-St-'
