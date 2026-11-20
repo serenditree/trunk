@@ -334,10 +334,7 @@ function sc_update_maven() {
         fi
         echo "Searching dependency updates..."
         [[ -n "$_ARG_ALL" ]] && local -r _override='-Dversions.maven.plugin.rules='
-        mvn validate -Pversion $_override |
-            sed -rn '/\[INFO\] The following version/,/\[INFO\] +$/p' |
-            sed -r -e 's/\[INFO\] +//' -e 's/.*available version.*/Latest:/' -e 's/.*are available.*/Updates:/' |
-            head -n-1
+        mvn validate -N -Pversion $_override
     fi
     popd &>/dev/null || exit 1
 }
