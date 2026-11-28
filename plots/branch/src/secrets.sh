@@ -4,7 +4,8 @@
 # Retrieves secrets for injection during command execution.
 ########################################################################################################################
 _ENV=
-pass serenditree/oidc | sed -En 's/.*(\w{2}\.\w+)/\1/p' | while read -r _ITEM; do
+_PASS_OIDC="${PASSWORD_STORE_DIR:-$HOME/.password-store}/serenditree/oidc"
+find "$_PASS_OIDC" -name '*.gpg' -printf '%P\n' | sed 's/\.gpg$//' | while read -r _ITEM; do
     _COUNTRY="${_ITEM%.*}"
     _COUNTRY="${_COUNTRY^^}"
     if [[ "${_ITEM#*.}" == "id" ]]; then
